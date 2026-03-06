@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-sans: "Exo 2", sans-serif;
+    --font-display: "Orbitron", sans-serif;
+  }
+  body {
+    background: linear-gradient(135deg, #020617 0%, #064e3b 100%);
+    color: white;
+    min-height: 100vh;
+  }
+}
+
+.glass-panel {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.neon-text {
+  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0,0,0,0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 255, 157, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 255, 157, 0.5);
+}
+
+/* Estilos de Impressão (PDF) */
+@media print {
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html, body {
+    background: white !important;
+    color: black !important;
+    font-family: 'Segoe UI', Arial, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+  header, footer, .print-hidden, button, input, .fixed, .absolute, [role="button"], #drawer-trigger {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    width: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  #root {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  .flex, .flex-col {
+    display: block !important;
+    height: auto !important;
+  }
+  main {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    background: white !important;
+    width: 100% !important;
+  }
+  .prose {
+    color: black !important;
+    max-width: none !important;
+    font-size: 11pt !important;
+  }
+  .markdown-container h1, .markdown-container h2, .markdown-container h3 {
+    color: black !important;
+    page-break-after: avoid;
+  }
+  .markdown-container p, .markdown-container ul, .markdown-container ol {
+    orphans: 3;
+    widows: 3;
+  }
+  svg {
+    filter: grayscale(1) brightness(0.2) !important;
+    max-width: 100% !important;
+  }
+  .markdown-container blockquote {
+    border-left: 2px solid #ccc !important;
+    background: #f9f9f9 !important;
+  }
+}
