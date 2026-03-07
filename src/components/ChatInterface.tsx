@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Message, ResponseMode, TeacherSettings, QuestionType } from '../types';
 import { streamMessageToGemini, streamQuestions, generateDeepDiveContent, generateSimulationMission } from '../services/geminiService';
 import Mascot from './Mascot';
-import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap } from 'lucide-react';
+import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap, Mic } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -49,6 +49,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
   
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
   const [isClearConfirmOpen, setIsClearConfirmOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [assessmentType, setAssessmentType] = useState<QuestionType>('Objetiva');
   const [assessmentTopic, setAssessmentTopic] = useState('');
 
@@ -75,6 +76,15 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const recognitionRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('telloo_chat_history', JSON.stringify(messages));
@@ -606,6 +616,65 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     setRevealedAnswers(prev => ({ ...prev, [msgId]: !prev[msgId] }));
   };
 
+  const toggleListening = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+      alert("Ops! Seu navegador ainda não aprendeu a ouvir. Tente usar o Chrome ou Edge! 🧬");
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'pt-BR';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognitionRef.current = recognition;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInputText(prev => prev + (prev ? ' ' : '') + transcript);
+        setIsListening(false);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error("Erro no reconhecimento de voz:", event.error);
+        setIsListening(false);
+        
+        if (event.error === 'not-allowed') {
+          alert("Acesso ao microfone negado. Por favor, autorize o uso do microfone nas configurações do seu navegador ou celular! 🎙️❌");
+        } else if (event.error === 'no-speech') {
+          // No alert for no-speech as it can be annoying, just stop listening
+        } else if (event.error === 'network') {
+          alert("Erro de rede. O reconhecimento de voz precisa de internet para funcionar! 🌐🔌");
+        }
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+        recognitionRef.current = null;
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.error("Erro ao iniciar reconhecimento:", err);
+      setIsListening(false);
+      alert("Não foi possível iniciar o microfone. Verifique se ele não está sendo usado por outro aplicativo.");
+    }
+  };
+
   const selectOption = (msgId: string, qIndex: number, optionLetter: string) => {
     setUserSelections(prev => ({
         ...prev,
@@ -983,7 +1052,14 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                     <span className="animate-pulse">{thinkingPhrases[thinkingIndex]}</span>
                   </div>
                 )}
-                <input ref={inputRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="O que vamos aprender hoje?" className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 focus:border-telloo-neonGreen outline-none text-sm shadow-inner" />
+                <input ref={inputRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={isListening ? "Pode falar, estou ouvindo... 🎙️" : "O que vamos aprender hoje?"} className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 focus:border-telloo-neonGreen outline-none text-sm shadow-inner" />
+                <button 
+                  onClick={toggleListening} 
+                  className={`p-4 rounded-2xl transition-all border ${isListening ? 'bg-red-500/20 border-red-500 text-red-500 animate-pulse' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'}`}
+                  title={isListening ? "Telloo está ouvindo... 🎙️" : "Falar com o Telloo"}
+                >
+                  <Mic size={20} />
+                </button>
                 <button onClick={() => handleSend()} disabled={!inputText.trim() || isLoading} className="p-4 bg-telloo-neonGreen text-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(0,255,157,0.3)]"><Send size={20}/></button>
             </div>
         </div>
