@@ -75,8 +75,10 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
   ], []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
+  const lastScrolledId = useRef<string | null>(null);
 
   useEffect(() => {
     return () => {
@@ -88,7 +90,26 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
 
   useEffect(() => {
     localStorage.setItem('telloo_chat_history', JSON.stringify(messages));
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    
+    const lastMsg = messages[messages.length - 1];
+    if (lastMsg && lastMsg.role === 'model' && lastScrolledId.current !== lastMsg.id) {
+        const element = document.getElementById(`msg-${lastMsg.id}`);
+        if (element && scrollContainerRef.current) {
+            // Rola o container principal para o topo da mensagem
+            const container = scrollContainerRef.current;
+            const elementTop = element.offsetTop;
+            
+            container.scrollTo({
+                top: elementTop - 20, // Pequena margem superior
+                behavior: 'smooth'
+            });
+            lastScrolledId.current = lastMsg.id;
+        } else {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    } else if (lastMsg && lastMsg.role === 'user') {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
   useEffect(() => {
@@ -409,11 +430,18 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     if (!textToSend.trim()) return;
 
     const modeToUse = mode || selectedMode;
-    if (!currentTopic && !isSilent) {
+    
+    // Atualiza o tópico atual se a mensagem for substancial e não for uma pergunta meta
+    if (!isSilent) {
         const isMetaQuestion = /^(quem é você|o que você faz|como você ajuda|quais suas capacidades|quem criou você|quem é o telloo)/i.test(textToSend.toLowerCase());
-        if (!isMetaQuestion) {
-            const topic = textToSend.length > 60 ? textToSend.substring(0, 60) + "..." : textToSend;
-            setCurrentTopic(topic);
+        if (!isMetaQuestion && textToSend.length > 20) {
+            const newTopic = textToSend.length > 60 ? textToSend.substring(0, 60) + "..." : textToSend;
+            if (newTopic !== currentTopic) {
+                setCurrentTopic(newTopic);
+                // Resetar a missão ativa para que a próxima abertura do Bio-Sandbox 
+                // ou sorteio de missão use o novo contexto
+                setActiveMission(null);
+            }
         }
     }
     
@@ -466,8 +494,13 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
   const handleOpenSimulation = () => {
     setIsSimulationMode(true);
     setIsDrawerOpen(true);
+    
+    // Se o tópico mudou, forçamos a atualização do conteúdo visual do laboratório
     setDrawerContent(`Laboratório iniciado para o tópico: **${currentTopic || 'Biologia'}**.`);
+    
     if (!activeMission) {
+        // Se não houver missão ativa (porque resetamos no handleSend ou é a primeira vez),
+        // pegamos uma nova baseada no tópico atual
         setActiveMission(getSimulationMission());
     }
   };
@@ -918,7 +951,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
         </div>
       )}
 
-      <header className="p-4 border-b border-white/5 bg-slate-900/80 backdrop-blur-md flex justify-between items-center sticky top-0 z-20 shadow-lg print:hidden">
+      <header className="p-4 border-b border-white/5 bg-slate-900/90 backdrop-blur-md flex justify-between items-center sticky top-0 z-20 shadow-lg print:hidden">
         <div className="flex items-center gap-3">
             <Mascot size="sm" animated={isLoading} />
             <div className="flex flex-col">
@@ -944,7 +977,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
         </div>
       </header>
 
-      <main className="flex-1 overflow-y-auto p-4 space-y-8 custom-scrollbar pb-32 sm:pb-40 print:p-0 print:bg-white print:text-black print:overflow-visible">
+      <main ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-8 custom-scrollbar pb-32 sm:pb-40 print:p-0 print:bg-white print:text-black print:overflow-visible">
         {messages.map((msg, i) => {
           const suggestions = msg.role === 'model' && !msg.isStreaming ? extractSuggestions(msg.text) : [];
           const parts = msg.text.split('---GABARITO---');
@@ -954,11 +987,11 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
           const isLast = i === messages.length - 1;
 
           return (
-            <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in print:block print:mb-8 print:break-inside-avoid`}>
-              <div className={`relative group max-w-[95%] sm:max-w-[85%] p-5 sm:p-8 rounded-2xl border transition-all ${msg.role === 'user' ? 'bg-slate-800 border-white/10' : 'bg-slate-900/60 border-telloo-neonGreen/10 shadow-xl'} print:bg-white print:border-none print:p-0 print:max-w-full`}>
+            <div id={`msg-${msg.id}`} key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in print:block print:mb-8 print:break-inside-avoid`}>
+              <div className={`relative group max-w-[95%] sm:max-w-[85%] p-5 sm:p-8 rounded-2xl border transition-all ${msg.role === 'user' ? 'bg-slate-800/80 backdrop-blur-md border-white/5' : 'bg-slate-900/40 backdrop-blur-xl border-telloo-neonGreen/5 shadow-2xl'} print:bg-white print:border-none print:p-0 print:max-w-full`}>
                 
                 {msg.role === 'model' && !msg.isStreaming && (
-                    <div className="absolute top-4 right-4 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity print:hidden">
+                    <div className="sticky top-24 float-right flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity print:hidden z-10 ml-4 mb-4">
                         <button onClick={() => copyToClipboard(msg.text, msg.id)} className="p-1.5 bg-black/40 border border-white/10 rounded-lg text-gray-400 hover:text-telloo-neonGreen transition-colors" title="Copiar bloco">
                             {copiedId === msg.id ? <Check size={14} className="text-telloo-neonGreen" /> : <Copy size={14}/>}
                         </button>
@@ -977,7 +1010,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
 
                 {msg.role === 'model' && msg.mode && <div className="flex items-center gap-2 mb-4 text-[9px] font-bold uppercase tracking-widest text-telloo-neonBlue bg-telloo-neonBlue/10 w-fit px-2 py-0.5 rounded border border-telloo-neonBlue/20 print:hidden"><Zap size={10}/> {msg.mode}</div>}
 
-                <div className="prose prose-invert max-w-none text-gray-200 leading-relaxed text-sm sm:text-base markdown-container print:text-black print:prose-black">
+                <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed text-sm sm:text-base markdown-container print:text-black print:prose-black">
                     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, questionContent)}>{questionContent}</ReactMarkdown>
                 </div>
 
@@ -1032,35 +1065,35 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
         <div ref={messagesEndRef} />
       </main>
 
-      <footer className="p-4 bg-slate-900 border-t border-white/5 fixed bottom-0 w-full z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.5)] print:hidden">
+      <footer className="p-4 bg-slate-900/90 backdrop-blur-md border-t border-white/5 fixed bottom-0 w-full z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.5)] print:hidden">
         <div className="max-w-4xl mx-auto space-y-4">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 {[
-                    { mode: ResponseMode.MIND_MAP, icon: Brain, color: 'text-purple-400', border: 'border-purple-500/30', bg: 'bg-purple-500/5' },
-                    { mode: ResponseMode.CREATIVE, icon: Palette, color: 'text-pink-400', border: 'border-pink-500/30', bg: 'bg-pink-500/5' },
-                    { mode: ResponseMode.LOGICAL, icon: Microscope, color: 'text-blue-400', border: 'border-blue-500/30', bg: 'bg-blue-500/5' },
-                    { mode: ResponseMode.LINGUISTIC, icon: BookOpen, color: 'text-cyan-400', border: 'border-cyan-500/30', bg: 'bg-cyan-500/5' },
-                    { mode: ResponseMode.BNCC, icon: GraduationCap, color: 'text-emerald-400', border: 'border-emerald-500/30', bg: 'bg-emerald-500/5' }
+                    { mode: ResponseMode.MIND_MAP, icon: Brain, color: 'text-purple-400', border: 'border-purple-500/20', bg: 'bg-purple-500/5' },
+                    { mode: ResponseMode.CREATIVE, icon: Palette, color: 'text-pink-400', border: 'border-pink-500/20', bg: 'bg-pink-500/5' },
+                    { mode: ResponseMode.LOGICAL, icon: Microscope, color: 'text-blue-400', border: 'border-blue-500/20', bg: 'bg-blue-500/5' },
+                    { mode: ResponseMode.LINGUISTIC, icon: BookOpen, color: 'text-cyan-400', border: 'border-cyan-500/20', bg: 'bg-cyan-500/5' },
+                    { mode: ResponseMode.BNCC, icon: GraduationCap, color: 'text-emerald-400', border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' }
                 ].map((item) => (
                     <button key={item.mode} onClick={() => handleModeSelect(item.mode)} className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${selectedMode === item.mode ? `${item.bg} ${item.color} ${item.border}` : 'bg-transparent text-gray-500 border-transparent hover:text-gray-400'}`}><item.icon size={12}/>{item.mode}</button>
                 ))}
             </div>
             <div className="flex items-center gap-3 relative">
                 {isLoading && (
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900 text-telloo-neonGreen px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border border-telloo-neonGreen/30 shadow-2xl flex items-center gap-3 whitespace-nowrap animate-fade-in">
+                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-telloo-neonGreen px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border border-telloo-neonGreen/20 shadow-2xl flex items-center gap-3 whitespace-nowrap animate-fade-in">
                     <Loader2 size={12} className="animate-spin" />
                     <span className="animate-pulse">{thinkingPhrases[thinkingIndex]}</span>
                   </div>
                 )}
-                <input ref={inputRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={isListening ? "Pode falar, estou ouvindo... 🎙️" : "O que vamos aprender hoje?"} className="flex-1 bg-black/40 border border-white/10 rounded-2xl p-4 focus:border-telloo-neonGreen outline-none text-sm shadow-inner" />
+                <input ref={inputRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={isListening ? "Pode falar, estou ouvindo... 🎙️" : "O que vamos aprender hoje?"} className="flex-1 bg-black/20 backdrop-blur-sm border border-white/5 rounded-2xl p-4 focus:border-telloo-neonGreen/50 outline-none text-sm shadow-inner transition-all" />
                 <button 
-                  onClick={toggleListening} 
-                  className={`p-4 rounded-2xl transition-all border ${isListening ? 'bg-red-500/20 border-red-500 text-red-500 animate-pulse' : 'bg-slate-800 border-white/10 text-gray-400 hover:text-white'}`}
-                  title={isListening ? "Telloo está ouvindo... 🎙️" : "Falar com o Telloo"}
-                >
-                  <Mic size={20} />
-                </button>
-                <button onClick={() => handleSend()} disabled={!inputText.trim() || isLoading} className="p-4 bg-telloo-neonGreen text-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_20px_rgba(0,255,157,0.3)]"><Send size={20}/></button>
+                   onClick={toggleListening} 
+                   className={`p-4 rounded-2xl transition-all border ${isListening ? 'bg-red-500/10 border-red-500/50 text-red-500 animate-pulse' : 'bg-white/5 border-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+                   title={isListening ? "Telloo está ouvindo... 🎙️" : "Falar com o Telloo"}
+                 >
+                   <Mic size={20} />
+                 </button>
+                 <button onClick={() => handleSend()} disabled={!inputText.trim() || isLoading} className="p-4 bg-telloo-neonGreen text-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(0,255,157,0.2)]"><Send size={20}/></button>
             </div>
         </div>
       </footer>
