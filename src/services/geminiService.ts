@@ -70,19 +70,22 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
       [SUGESTÃO: Tópico A] [SUGESTÃO: Tópico B]
     - Não use numeração ou bullet points para as sugestões.
 
-    CAPACIDADE VISUAL (SVG DIAGRAMS):
-    - Gere diagramas <svg> inline: viewBox="0 0 100 100", width="100%", height="auto".
-    - Use EXCLUSIVAMENTE cores neon: Verde (#00ff9d), Azul (#00f0ff), Branco (#ffffff).
-    - IMPORTANTE: Todo diagrama deve ser INFORMATIVO. Use a tag <text> para incluir legendas, nomes de organelas ou ALELOS (em cruzamentos).
-    - GARANTA que todo o conteúdo (formas e textos) esteja dentro dos limites do viewBox (0 a 100). Use coordenadas seguras (ex: entre 5 e 95) para evitar cortes.
-    - ESTRUTURA RÍGIDA PARA QUADRADO DE PUNNETT (MENDEL):
-      1. Use uma grade (grid) centralizada. Para 1ª Lei (2x2), use células de 25x25. Para 2ª Lei (4x4), use células de 15x15.
-      2. ALELOS DOS PAIS: Devem estar FORA da grade principal, mas alinhados. 
-         - Pai (Topo): Coordenada Y fixa (ex: 15), X alinhado ao centro de cada coluna.
-         - Mãe (Esquerda): Coordenada X fixa (ex: 15), Y alinhado ao centro de cada linha.
-      3. RESULTADOS (DENTRO): Use text-anchor="middle" e dominant-baseline="middle" para centralizar o texto exatamente no meio de cada célula da grade.
-      4. NUNCA coloque informações de alelos abaixo do quadrado; eles devem ser as "âncoras" das linhas e colunas.
-      5. Use font-size pequeno (ex: 4 ou 5) para garantir que textos longos (ex: AaBb) caibam nas células.
+    CAPACIDADE VISUAL (HÍBRIDA):
+    - MODO SVG (Diagramas e Lógica): Use para fluxogramas, genética e esquemas.
+      * ESTÉTICA AVANÇADA: Use <defs> com <linearGradient> e <filter id="shadow"> (feDropShadow) para dar profundidade.
+      * Use cores neon com opacidades variadas.
+      * ESTRUTURA RÍGIDA PARA QUADRADO DE PUNNETT (MENDEL):
+        1. Use uma grade (grid) centralizada. Para 1ª Lei (2x2), use células de 25x25. Para 2ª Lei (4x4), use células de 15x15.
+        2. ALELOS DOS PAIS: Devem estar FORA da grade principal, mas alinhados. 
+           - Pai (Topo): Coordenada Y fixa (ex: 15), X alinhado ao centro de cada coluna.
+           - Mãe (Esquerda): Coordenada X fixa (ex: 15), Y alinhado ao centro de cada linha.
+        3. RESULTADOS (DENTRO): Use text-anchor="middle" e dominant-baseline="middle" para centralizar o texto exatamente no meio de cada célula da grade.
+        4. NUNCA coloque informações de alelos abaixo do quadrado; eles devem ser as "âncoras" das linhas e colunas.
+        5. Use font-size pequeno (ex: 4 ou 5) para garantir que textos longos (ex: AaBb) caibam nas células.
+    
+    - MODO ILUSTRAÇÃO (Alta Qualidade): Para estruturas biológicas complexas (células, órgãos, animais, ecossistemas), use o marcador:
+      [IMAGE_PROMPT: descrição detalhada e técnica em inglês para uma ilustração biológica profissional, nítida, estilo livro didático moderno, fundo escuro]
+      * Use este modo apenas quando um SVG não for suficiente para mostrar detalhes nítidos.
 
     CONTEXTO:
     - Série: ${settings.gradeLevel}, Tema: ${settings.currentChapter || 'Geral'}.
@@ -125,11 +128,54 @@ export const streamMessageToGemini = async (
               onChunk(fullText);
           }
         }
+
+        // Verificar se há um pedido de imagem de alta qualidade
+        const imageMatch = fullText.match(/\[IMAGE_PROMPT:\s*(.*?)\]/);
+        if (imageMatch) {
+            const prompt = imageMatch[1];
+            try {
+                const imageUrl = await generateImage(prompt);
+                if (imageUrl) {
+                    fullText = fullText.replace(/\[IMAGE_PROMPT:.*?\]/, `\n\n![Ilustração Biológica](${imageUrl})\n\n`);
+                    onChunk(fullText);
+                }
+            } catch (err) {
+                console.error("Erro ao gerar imagem:", err);
+                fullText = fullText.replace(/\[IMAGE_PROMPT:.*?\]/, "");
+                onChunk(fullText);
+            }
+        }
       });
     } catch (error) {
       throw error;
     }
   };
+
+export const generateImage = async (prompt: string): Promise<string | null> => {
+    try {
+        const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+        const ai = new GoogleGenAI({ apiKey: apiKey! });
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: [{ parts: [{ text: prompt }] }],
+            config: {
+                imageConfig: {
+                    aspectRatio: "1:1"
+                }
+            }
+        });
+
+        for (const part of response.candidates?.[0]?.content?.parts || []) {
+            if (part.inlineData) {
+                return `data:image/png;base64,${part.inlineData.data}`;
+            }
+        }
+        return null;
+    } catch (error) {
+        console.error("Erro na geração de imagem:", error);
+        return null;
+    }
+};
 
 export const streamQuestions = async (
     topicContext: string,
