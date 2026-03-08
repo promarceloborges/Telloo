@@ -91,18 +91,23 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('telloo_chat_history', JSON.stringify(messages));
-    
+    // Debounce o salvamento no localStorage para evitar travamentos durante o streaming
+    const timeoutId = setTimeout(() => {
+      const isAnyStreaming = messages.some(m => m.isStreaming);
+      if (!isAnyStreaming || messages.length % 5 === 0) {
+        localStorage.setItem('telloo_chat_history', JSON.stringify(messages));
+      }
+    }, 1000);
+
     const lastMsg = messages[messages.length - 1];
     if (lastMsg && lastMsg.role === 'model' && lastScrolledId.current !== lastMsg.id) {
         const element = document.getElementById(`msg-${lastMsg.id}`);
         if (element && scrollContainerRef.current) {
-            // Rola o container principal para o topo da mensagem
             const container = scrollContainerRef.current;
             const elementTop = element.offsetTop;
             
             container.scrollTo({
-                top: elementTop - 20, // Pequena margem superior
+                top: elementTop - 20,
                 behavior: 'smooth'
             });
             lastScrolledId.current = lastMsg.id;
@@ -112,6 +117,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     } else if (lastMsg && lastMsg.role === 'user') {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }
+
+    return () => clearTimeout(timeoutId);
   }, [messages]);
 
   useEffect(() => {
@@ -926,6 +933,119 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     };
   };
 
+  const memoizedMessages = useMemo(() => {
+    return messages.map((msg, i) => {
+      const suggestions = msg.role === 'model' && !msg.isStreaming ? extractSuggestions(msg.text) : [];
+      const parts = msg.text.split('---GABARITO---');
+      const questionContent = parts[0].replace(/\[SUGESTÃO:.*?\]/g, '');
+      const answerKey = parts[1] || '';
+      const isAnswerRevealed = revealedAnswers[msg.id];
+      const isLast = i === messages.length - 1;
+
+      return (
+        <div id={`msg-${msg.id}`} key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in print:block print:mb-8 print:break-inside-avoid`}>
+            <div id={`msg-content-${msg.id}`} className={`relative group max-w-[95%] sm:max-w-[85%] p-5 sm:p-8 rounded-2xl border transition-all ${msg.role === 'user' ? 'bg-slate-800/80 backdrop-blur-md border-white/5' : 'bg-slate-900/40 backdrop-blur-xl border-telloo-neonGreen/5 shadow-2xl'} print:bg-white print:border-none print:p-0 print:max-w-full`}>
+            
+            {msg.role === 'model' && !msg.isStreaming && (
+                <div className="sticky top-24 float-right flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity print:hidden z-10 ml-4 mb-4">
+                    <button onClick={() => copyToClipboard(msg.text, msg.id)} className="p-1.5 bg-black/40 border border-white/10 rounded-lg text-gray-400 hover:text-telloo-neonGreen transition-colors" title="Copiar bloco">
+                        {copiedId === msg.id ? <Check size={14} className="text-telloo-neonGreen" /> : <Copy size={14}/>}
+                    </button>
+                    <div className="relative group/exp">
+                        <button className="p-1.5 bg-black/40 border border-white/10 rounded-lg text-gray-400 hover:text-telloo-neonBlue transition-colors" title="Exportar este bloco">
+                            <Share2 size={14}/>
+                        </button>
+                        <div className="absolute right-0 top-full mt-1 hidden group-hover/exp:block bg-slate-800 border border-white/10 rounded-lg shadow-xl overflow-hidden z-30">
+                            <button onClick={() => exportSingleBlock(msg.text, 'txt')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.TXT</button>
+                            <button onClick={() => exportSingleBlock(msg.text, 'doc')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.DOC</button>
+                            <button onClick={() => exportSingleBlock(msg.text, 'pdf')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.PDF</button>
+                            <button onClick={() => exportSingleBlock(msg.text, 'whatsapp', msg.id)} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 text-green-400">WHATSAPP</button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {msg.role === 'model' && msg.mode && <div className="flex items-center gap-2 mb-4 text-[9px] font-bold uppercase tracking-widest text-telloo-neonBlue bg-telloo-neonBlue/10 w-fit px-2 py-0.5 rounded border border-telloo-neonBlue/20 print:hidden"><Zap size={10}/> {msg.mode}</div>}
+
+            <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed text-sm sm:text-base markdown-container print:text-black print:prose-black">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, questionContent)}>{questionContent}</ReactMarkdown>
+            </div>
+
+            {hasError && isLast && msg.role === 'model' && (
+              <div className="mt-4 flex flex-col items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
+                  <div className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-widest">
+                      <AlertTriangle size={16}/> Falha de Sincronização
+                  </div>
+                  <button onClick={retryLastMessage} className="flex items-center gap-2 px-4 py-2 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-lg hover:scale-105 transition-all">
+                      <RefreshCw size={14}/> Tentar Novamente Agora
+                  </button>
+              </div>
+            )}
+
+            {answerKey && !msg.isStreaming && (
+                <div className="mt-6 space-y-4 print:mt-10">
+                    <button onClick={() => toggleAnswer(msg.id)} className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-telloo-neonGreen/30 text-telloo-neonGreen text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-telloo-neonGreen/10 transition-all print:hidden">
+                        {isAnswerRevealed ? <><EyeOff size={14}/> Esconder Gabarito</> : <><Eye size={14}/> Ver Gabarito Comentado</>}
+                    </button>
+                    {(isAnswerRevealed || window.matchMedia('print').matches) && (
+                        <div className="bg-telloo-neonGreen/5 border-l-4 border-telloo-neonGreen p-5 rounded-r-xl animate-fade-in print:bg-white print:border-black print:p-2">
+                            <div className="flex items-center gap-2 mb-3 text-telloo-neonGreen print:text-black">
+                                <ClipboardCheck size={18}/>
+                                <h4 className="text-xs font-bold uppercase tracking-widest">Resolução Comentada</h4>
+                            </div>
+                            <div className="prose prose-invert max-w-none text-xs sm:text-sm text-gray-300 print:text-black">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, answerKey, 99)}>{answerKey}</ReactMarkdown>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+            
+            {isLast && !msg.isStreaming && suggestions.length > 0 && (
+                <div className="mt-6 flex flex-wrap gap-2 print:hidden">
+                    {suggestions.map((s, idx) => (<button key={idx} onClick={() => handleSend(s)} className="px-4 py-2 bg-telloo-neonBlue/5 border border-telloo-neonBlue/20 text-telloo-neonBlue text-[11px] font-bold rounded-xl hover:bg-telloo-neonBlue/15 transition-all"><Sparkles size={12}/> {s}</button>))}
+                </div>
+            )}
+
+            {isLast && !msg.isStreaming && msg.role === 'model' && msg.id !== 'intro' && !hasError && (
+                <div className="mt-8 pt-6 border-t border-white/5 space-y-6 print:hidden">
+                    <div className="bg-white/5 rounded-2xl p-4 border border-white/10 animate-fade-in">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+                            <Sparkles size={12} className="text-telloo-neonGreen" /> Quer reforçar este aprendizado em outro estilo?
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {[
+                                { mode: ResponseMode.MIND_MAP, icon: Brain, label: 'Mapa Mental', color: 'text-purple-400' },
+                                { mode: ResponseMode.CREATIVE, icon: Palette, label: 'Criativo', color: 'text-pink-400' },
+                                { mode: ResponseMode.LOGICAL, icon: Microscope, label: 'Lógico', color: 'text-blue-400' },
+                                { mode: ResponseMode.LINGUISTIC, icon: BookOpen, label: 'Linguístico', color: 'text-cyan-400' },
+                                { mode: ResponseMode.BNCC, icon: GraduationCap, label: 'BNCC', color: 'text-emerald-400' }
+                            ].filter(m => m.mode !== selectedMode).map((m) => (
+                                <button 
+                                    key={m.mode} 
+                                    onClick={() => handleReExplain(m.mode)}
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold uppercase tracking-wider text-gray-300 hover:bg-white/10 hover:border-white/20 transition-all"
+                                >
+                                    <m.icon size={12} className={m.color} /> {m.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <button onClick={() => handleGenerateAssessment('Objetiva')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonGreen/10 border border-telloo-neonGreen/30 rounded-xl text-[9px] font-bold text-telloo-neonGreen uppercase tracking-widest hover:bg-telloo-neonGreen/20 transition-all"><Target size={14}/> Desafio</button>
+                        <button onClick={handleOpenDeepDive} className="flex items-center justify-center gap-2 p-3 bg-slate-800 border border-slate-700 rounded-xl text-[9px] font-bold text-gray-400 uppercase tracking-widest hover:bg-slate-700 transition-all"><Library size={14}/> Bio-Data</button>
+                        <button onClick={handleOpenSimulation} className="flex items-center justify-center gap-2 p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl text-[9px] font-bold text-purple-400 uppercase tracking-widest hover:bg-purple-500/20 transition-all"><Beaker size={14}/> Simular</button>
+                        <button onClick={() => handleGenerateAssessment('PROVA')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonBlue/10 border border-telloo-neonBlue/30 rounded-xl text-[9px] font-bold text-telloo-neonBlue uppercase tracking-widest hover:bg-telloo-neonBlue/20 transition-all"><FileText size={14}/> Prova</button>
+                    </div>
+                </div>
+            )}
+          </div>
+        </div>
+      );
+    });
+  }, [messages, revealedAnswers, userSelections, copiedId, hasError, selectedMode]);
+
   return (
     <div className="flex flex-col h-screen bg-[#020617] text-white overflow-hidden">
       <div className={`fixed inset-y-0 right-0 w-full sm:w-[500px] bg-slate-900 z-50 transform transition-transform border-l border-telloo-neonGreen/30 shadow-2xl ${isDrawerOpen ? 'translate-x-0' : 'translate-x-full'} print:hidden`}>
@@ -1092,117 +1212,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
       </header>
 
       <main ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-8 custom-scrollbar pb-32 sm:pb-40 print:p-0 print:bg-white print:text-black print:overflow-visible">
-        {messages.map((msg, i) => {
-          const suggestions = msg.role === 'model' && !msg.isStreaming ? extractSuggestions(msg.text) : [];
-          const parts = msg.text.split('---GABARITO---');
-          const questionContent = parts[0].replace(/\[SUGESTÃO:.*?\]/g, '');
-          const answerKey = parts[1] || '';
-          const isAnswerRevealed = revealedAnswers[msg.id];
-          const isLast = i === messages.length - 1;
-
-          return (
-            <div id={`msg-${msg.id}`} key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in print:block print:mb-8 print:break-inside-avoid`}>
-                <div id={`msg-content-${msg.id}`} className={`relative group max-w-[95%] sm:max-w-[85%] p-5 sm:p-8 rounded-2xl border transition-all ${msg.role === 'user' ? 'bg-slate-800/80 backdrop-blur-md border-white/5' : 'bg-slate-900/40 backdrop-blur-xl border-telloo-neonGreen/5 shadow-2xl'} print:bg-white print:border-none print:p-0 print:max-w-full`}>
-                
-                {msg.role === 'model' && !msg.isStreaming && (
-                    <div className="sticky top-24 float-right flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity print:hidden z-10 ml-4 mb-4">
-                        <button onClick={() => copyToClipboard(msg.text, msg.id)} className="p-1.5 bg-black/40 border border-white/10 rounded-lg text-gray-400 hover:text-telloo-neonGreen transition-colors" title="Copiar bloco">
-                            {copiedId === msg.id ? <Check size={14} className="text-telloo-neonGreen" /> : <Copy size={14}/>}
-                        </button>
-                        <div className="relative group/exp">
-                            <button className="p-1.5 bg-black/40 border border-white/10 rounded-lg text-gray-400 hover:text-telloo-neonBlue transition-colors" title="Exportar este bloco">
-                                <Share2 size={14}/>
-                            </button>
-                            <div className="absolute right-0 top-full mt-1 hidden group-hover/exp:block bg-slate-800 border border-white/10 rounded-lg shadow-xl overflow-hidden z-30">
-                                <button onClick={() => exportSingleBlock(msg.text, 'txt')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.TXT</button>
-                                <button onClick={() => exportSingleBlock(msg.text, 'doc')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.DOC</button>
-                                <button onClick={() => exportSingleBlock(msg.text, 'pdf')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.PDF</button>
-                                <button onClick={() => exportSingleBlock(msg.text, 'whatsapp', msg.id)} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 text-green-400">WHATSAPP</button>
-                            </div>
-                        </div>
-                    </div>
-                )}
-
-                {msg.role === 'model' && msg.mode && <div className="flex items-center gap-2 mb-4 text-[9px] font-bold uppercase tracking-widest text-telloo-neonBlue bg-telloo-neonBlue/10 w-fit px-2 py-0.5 rounded border border-telloo-neonBlue/20 print:hidden"><Zap size={10}/> {msg.mode}</div>}
-
-                <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed text-sm sm:text-base markdown-container print:text-black print:prose-black">
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, questionContent)}>{questionContent}</ReactMarkdown>
-                </div>
-
-                {hasError && isLast && msg.role === 'model' && (
-                  <div className="mt-4 flex flex-col items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                      <div className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-widest">
-                          <AlertTriangle size={16}/> Falha de Sincronização
-                      </div>
-                      <button onClick={retryLastMessage} className="flex items-center gap-2 px-4 py-2 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-lg hover:scale-105 transition-all">
-                          <RefreshCw size={14}/> Tentar Novamente Agora
-                      </button>
-                  </div>
-                )}
-
-                {answerKey && !msg.isStreaming && (
-                    <div className="mt-6 space-y-4 print:mt-10">
-                        <button onClick={() => toggleAnswer(msg.id)} className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-telloo-neonGreen/30 text-telloo-neonGreen text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-telloo-neonGreen/10 transition-all print:hidden">
-                            {isAnswerRevealed ? <><EyeOff size={14}/> Esconder Gabarito</> : <><Eye size={14}/> Ver Gabarito Comentado</>}
-                        </button>
-                        {(isAnswerRevealed || window.matchMedia('print').matches) && (
-                            <div className="bg-telloo-neonGreen/5 border-l-4 border-telloo-neonGreen p-5 rounded-r-xl animate-fade-in print:bg-white print:border-black print:p-2">
-                                <div className="flex items-center gap-2 mb-3 text-telloo-neonGreen print:text-black">
-                                    <ClipboardCheck size={18}/>
-                                    <h4 className="text-xs font-bold uppercase tracking-widest">Resolução Comentada</h4>
-                                </div>
-                                <div className="prose prose-invert max-w-none text-xs sm:text-sm text-gray-300 print:text-black">
-                                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, answerKey, 99)}>{answerKey}</ReactMarkdown>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-                
-                {isLast && !msg.isStreaming && suggestions.length > 0 && (
-                    <div className="mt-6 flex flex-wrap gap-2 print:hidden">
-                        {suggestions.map((s, idx) => (<button key={idx} onClick={() => handleSend(s)} className="px-4 py-2 bg-telloo-neonBlue/5 border border-telloo-neonBlue/20 text-telloo-neonBlue text-[11px] font-bold rounded-xl hover:bg-telloo-neonBlue/15 transition-all"><Sparkles size={12}/> {s}</button>))}
-                    </div>
-                )}
-
-                {isLast && !msg.isStreaming && msg.role === 'model' && msg.id !== 'intro' && !hasError && (
-                    <div className="mt-8 pt-6 border-t border-white/5 space-y-6 print:hidden">
-                        {/* Nova seção de reforço multimodal */}
-                        <div className="bg-white/5 rounded-2xl p-4 border border-white/10 animate-fade-in">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
-                                <Sparkles size={12} className="text-telloo-neonGreen" /> Quer reforçar este aprendizado em outro estilo?
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                                {[
-                                    { mode: ResponseMode.MIND_MAP, icon: Brain, label: 'Mapa Mental', color: 'text-purple-400' },
-                                    { mode: ResponseMode.CREATIVE, icon: Palette, label: 'Criativo', color: 'text-pink-400' },
-                                    { mode: ResponseMode.LOGICAL, icon: Microscope, label: 'Lógico', color: 'text-blue-400' },
-                                    { mode: ResponseMode.LINGUISTIC, icon: BookOpen, label: 'Linguístico', color: 'text-cyan-400' },
-                                    { mode: ResponseMode.BNCC, icon: GraduationCap, label: 'BNCC', color: 'text-emerald-400' }
-                                ].filter(m => m.mode !== selectedMode).map((m) => (
-                                    <button 
-                                        key={m.mode} 
-                                        onClick={() => handleReExplain(m.mode)}
-                                        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold uppercase tracking-wider text-gray-300 hover:bg-white/10 hover:border-white/20 transition-all"
-                                    >
-                                        <m.icon size={12} className={m.color} /> {m.label}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                            <button onClick={() => handleGenerateAssessment('Objetiva')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonGreen/10 border border-telloo-neonGreen/30 rounded-xl text-[9px] font-bold text-telloo-neonGreen uppercase tracking-widest hover:bg-telloo-neonGreen/20 transition-all"><Target size={14}/> Desafio</button>
-                            <button onClick={handleOpenDeepDive} className="flex items-center justify-center gap-2 p-3 bg-slate-800 border border-slate-700 rounded-xl text-[9px] font-bold text-gray-400 uppercase tracking-widest hover:bg-slate-700 transition-all"><Library size={14}/> Bio-Data</button>
-                            <button onClick={handleOpenSimulation} className="flex items-center justify-center gap-2 p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl text-[9px] font-bold text-purple-400 uppercase tracking-widest hover:bg-purple-500/20 transition-all"><Beaker size={14}/> Simular</button>
-                            <button onClick={() => handleGenerateAssessment('PROVA')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonBlue/10 border border-telloo-neonBlue/30 rounded-xl text-[9px] font-bold text-telloo-neonBlue uppercase tracking-widest hover:bg-telloo-neonBlue/20 transition-all"><FileText size={14}/> Prova</button>
-                        </div>
-                    </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {memoizedMessages}
         <div ref={messagesEndRef} />
       </main>
 
