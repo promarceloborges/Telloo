@@ -1,9 +1,11 @@
 
 import React, { useState, useRef, useEffect, useMemo } from 'react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import { Message, ResponseMode, TeacherSettings, QuestionType } from '../types';
 import { streamMessageToGemini, streamQuestions, generateDeepDiveContent, generateSimulationMission } from '../services/geminiService';
 import Mascot from './Mascot';
-import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap, Mic } from 'lucide-react';
+import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap, Mic, MessageCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -353,10 +355,64 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     });
   };
 
-  const exportSingleBlock = (text: string, format: 'txt' | 'doc' | 'pdf') => {
+  const exportSingleBlock = async (text: string, format: 'txt' | 'doc' | 'pdf' | 'whatsapp', msgId?: string) => {
     const preserveSvg = format === 'pdf' || format === 'doc';
     const clean = cleanMarkdown(text, preserveSvg);
     
+    if (format === 'whatsapp' && msgId) {
+        const element = document.getElementById(`msg-content-${msgId}`);
+        if (!element) return;
+
+        try {
+            // Geração de PDF de alta qualidade (vetorial/alta resolução)
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#0f172a', // slate-900
+                scale: 3, // Escala 3x para garantir nitidez total no zoom
+                logging: false,
+                useCORS: true,
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById(`msg-content-${msgId}`);
+                    if (el) {
+                        el.style.padding = '40px';
+                        el.style.borderRadius = '0px';
+                        el.style.border = 'none';
+                        // Esconder elementos de UI que não devem sair no PDF
+                        const uiElements = el.querySelectorAll('.print\\:hidden');
+                        uiElements.forEach((e: any) => e.style.display = 'none');
+                    }
+                }
+            });
+
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width / 3, canvas.height / 3]
+            });
+
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3, undefined, 'FAST');
+            const pdfBlob = pdf.output('blob');
+            const file = new File([pdfBlob], `telloo-estudo-${Date.now()}.pdf`, { type: 'application/pdf' });
+
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Ficha de Estudo Telloo AI',
+                    text: 'Veja esta explicação detalhada que o Telloo gerou! 🧬'
+                });
+            } else {
+                // Fallback para download se o navegador não suportar compartilhamento de arquivos
+                pdf.save(`telloo-estudo-${Date.now()}.pdf`);
+                alert("Sua ficha de estudo em PDF de alta qualidade foi gerada! Agora você pode enviá-la pelo WhatsApp.");
+            }
+        } catch (err) {
+            console.error("Erro ao compartilhar PDF:", err);
+            const encodedText = encodeURIComponent(`🧬 *Dica de Estudo do Telloo AI*\n\n${cleanMarkdown(text).substring(0, 1500)}`);
+            window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+        }
+        return;
+    }
+
     if (format === 'pdf') {
         const printWindow = window.open('', '_blank');
         if (printWindow) {
@@ -515,9 +571,60 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     });
   };
 
-  const exportChat = (format: 'txt' | 'pdf' | 'docx') => {
+  const exportChat = async (format: 'txt' | 'pdf' | 'docx' | 'whatsapp') => {
     const title = `Relatório de Estudo Telloo - ${currentTopic || 'Biologia'}`;
     const timestamp = new Date().toLocaleString('pt-BR');
+
+    if (format === 'whatsapp') {
+        const element = scrollContainerRef.current;
+        if (!element) return;
+        setShowExportMenu(false);
+
+        try {
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#0f172a',
+                scale: 2,
+                logging: false,
+                useCORS: true,
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.querySelector('main');
+                    if (el) {
+                        el.style.padding = '40px';
+                        const uiElements = el.querySelectorAll('.print\\:hidden');
+                        uiElements.forEach((e: any) => e.style.display = 'none');
+                    }
+                }
+            });
+
+            const imgData = canvas.toDataURL('image/png', 1.0);
+            const pdf = new jsPDF({
+                orientation: 'portrait',
+                unit: 'px',
+                format: [canvas.width / 2, canvas.height / 2]
+            });
+
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2, undefined, 'FAST');
+            const pdfBlob = pdf.output('blob');
+            const file = new File([pdfBlob], `telloo-relatorio-${Date.now()}.pdf`, { type: 'application/pdf' });
+
+            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Relatório de Estudo Telloo AI',
+                    text: `Confira meu progresso de estudo sobre ${currentTopic || 'Biologia'}! 🧬`
+                });
+            } else {
+                pdf.save(`telloo-relatorio-${Date.now()}.pdf`);
+                alert("Seu relatório em PDF foi gerado! Agora você pode enviá-lo pelo WhatsApp.");
+            }
+        } catch (err) {
+            console.error("Erro ao compartilhar PDF:", err);
+            const encodedText = encodeURIComponent(`🧬 *Relatório de Estudo Telloo AI*\n*Tema:* ${currentTopic || 'Biologia'}\n\nConfira no Telloo!`);
+            window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+        }
+        return;
+    }
+
     if (format === 'pdf') {
         setShowExportMenu(false);
         setTimeout(() => window.print(), 200);
@@ -588,6 +695,12 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     } else {
         handleSend(`Ative o modo ${mode}. Me dê uma breve introdução sobre como vamos trabalhar!`, mode);
     }
+  };
+
+  const handleReExplain = (mode: ResponseMode) => {
+    setSelectedMode(mode);
+    const prompt = `Gostaria que você me explicasse novamente o assunto "${currentTopic || 'Biologia'}" usando o modo ${mode}.`;
+    handleSend(prompt, mode);
   };
 
   const handleGenerateAssessment = (type: QuestionType) => {
@@ -968,7 +1081,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                     <div className="absolute right-0 mt-2 w-32 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
                         <button onClick={() => exportChat('txt')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .TXT</button>
                         <button onClick={() => exportChat('docx')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .DOC</button>
-                        <button onClick={() => exportChat('pdf')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center gap-2"><FileText size={12}/> .PDF</button>
+                        <button onClick={() => exportChat('pdf')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .PDF</button>
+                        <button onClick={() => exportChat('whatsapp')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center gap-2 text-green-400"><MessageCircle size={12}/> WhatsApp</button>
                     </div>
                 )}
             </div>
@@ -988,7 +1102,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
 
           return (
             <div id={`msg-${msg.id}`} key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in print:block print:mb-8 print:break-inside-avoid`}>
-              <div className={`relative group max-w-[95%] sm:max-w-[85%] p-5 sm:p-8 rounded-2xl border transition-all ${msg.role === 'user' ? 'bg-slate-800/80 backdrop-blur-md border-white/5' : 'bg-slate-900/40 backdrop-blur-xl border-telloo-neonGreen/5 shadow-2xl'} print:bg-white print:border-none print:p-0 print:max-w-full`}>
+                <div id={`msg-content-${msg.id}`} className={`relative group max-w-[95%] sm:max-w-[85%] p-5 sm:p-8 rounded-2xl border transition-all ${msg.role === 'user' ? 'bg-slate-800/80 backdrop-blur-md border-white/5' : 'bg-slate-900/40 backdrop-blur-xl border-telloo-neonGreen/5 shadow-2xl'} print:bg-white print:border-none print:p-0 print:max-w-full`}>
                 
                 {msg.role === 'model' && !msg.isStreaming && (
                     <div className="sticky top-24 float-right flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity print:hidden z-10 ml-4 mb-4">
@@ -1002,7 +1116,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                             <div className="absolute right-0 top-full mt-1 hidden group-hover/exp:block bg-slate-800 border border-white/10 rounded-lg shadow-xl overflow-hidden z-30">
                                 <button onClick={() => exportSingleBlock(msg.text, 'txt')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.TXT</button>
                                 <button onClick={() => exportSingleBlock(msg.text, 'doc')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.DOC</button>
-                                <button onClick={() => exportSingleBlock(msg.text, 'pdf')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5">.PDF</button>
+                                <button onClick={() => exportSingleBlock(msg.text, 'pdf')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.PDF</button>
+                                <button onClick={() => exportSingleBlock(msg.text, 'whatsapp', msg.id)} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 text-green-400">WHATSAPP</button>
                             </div>
                         </div>
                     </div>
@@ -1051,11 +1166,37 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 )}
 
                 {isLast && !msg.isStreaming && msg.role === 'model' && msg.id !== 'intro' && !hasError && (
-                    <div className="mt-8 pt-6 border-t border-white/5 grid grid-cols-2 sm:grid-cols-4 gap-3 print:hidden">
-                        <button onClick={() => handleGenerateAssessment('Objetiva')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonGreen/10 border border-telloo-neonGreen/30 rounded-xl text-[9px] font-bold text-telloo-neonGreen uppercase tracking-widest hover:bg-telloo-neonGreen/20 transition-all"><Target size={14}/> Desafio</button>
-                        <button onClick={handleOpenDeepDive} className="flex items-center justify-center gap-2 p-3 bg-slate-800 border border-slate-700 rounded-xl text-[9px] font-bold text-gray-400 uppercase tracking-widest hover:bg-slate-700 transition-all"><Library size={14}/> Bio-Data</button>
-                        <button onClick={handleOpenSimulation} className="flex items-center justify-center gap-2 p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl text-[9px] font-bold text-purple-400 uppercase tracking-widest hover:bg-purple-500/20 transition-all"><Beaker size={14}/> Simular</button>
-                        <button onClick={() => handleGenerateAssessment('PROVA')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonBlue/10 border border-telloo-neonBlue/30 rounded-xl text-[9px] font-bold text-telloo-neonBlue uppercase tracking-widest hover:bg-telloo-neonBlue/20 transition-all"><FileText size={14}/> Prova</button>
+                    <div className="mt-8 pt-6 border-t border-white/5 space-y-6 print:hidden">
+                        {/* Nova seção de reforço multimodal */}
+                        <div className="bg-white/5 rounded-2xl p-4 border border-white/10 animate-fade-in">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+                                <Sparkles size={12} className="text-telloo-neonGreen" /> Quer reforçar este aprendizado em outro estilo?
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                {[
+                                    { mode: ResponseMode.MIND_MAP, icon: Brain, label: 'Mapa Mental', color: 'text-purple-400' },
+                                    { mode: ResponseMode.CREATIVE, icon: Palette, label: 'Criativo', color: 'text-pink-400' },
+                                    { mode: ResponseMode.LOGICAL, icon: Microscope, label: 'Lógico', color: 'text-blue-400' },
+                                    { mode: ResponseMode.LINGUISTIC, icon: BookOpen, label: 'Linguístico', color: 'text-cyan-400' },
+                                    { mode: ResponseMode.BNCC, icon: GraduationCap, label: 'BNCC', color: 'text-emerald-400' }
+                                ].filter(m => m.mode !== selectedMode).map((m) => (
+                                    <button 
+                                        key={m.mode} 
+                                        onClick={() => handleReExplain(m.mode)}
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold uppercase tracking-wider text-gray-300 hover:bg-white/10 hover:border-white/20 transition-all"
+                                    >
+                                        <m.icon size={12} className={m.color} /> {m.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            <button onClick={() => handleGenerateAssessment('Objetiva')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonGreen/10 border border-telloo-neonGreen/30 rounded-xl text-[9px] font-bold text-telloo-neonGreen uppercase tracking-widest hover:bg-telloo-neonGreen/20 transition-all"><Target size={14}/> Desafio</button>
+                            <button onClick={handleOpenDeepDive} className="flex items-center justify-center gap-2 p-3 bg-slate-800 border border-slate-700 rounded-xl text-[9px] font-bold text-gray-400 uppercase tracking-widest hover:bg-slate-700 transition-all"><Library size={14}/> Bio-Data</button>
+                            <button onClick={handleOpenSimulation} className="flex items-center justify-center gap-2 p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl text-[9px] font-bold text-purple-400 uppercase tracking-widest hover:bg-purple-500/20 transition-all"><Beaker size={14}/> Simular</button>
+                            <button onClick={() => handleGenerateAssessment('PROVA')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonBlue/10 border border-telloo-neonBlue/30 rounded-xl text-[9px] font-bold text-telloo-neonBlue uppercase tracking-widest hover:bg-telloo-neonBlue/20 transition-all"><FileText size={14}/> Prova</button>
+                        </div>
                     </div>
                 )}
               </div>
