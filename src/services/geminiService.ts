@@ -41,7 +41,7 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
     ESTILO DE RESPOSTA (FLUIDEZ):
     - Use Markdown com Títulos (H1, H2, H3), Listas e Negritos.
     - Se o modo for "Mapa Mental", use listas aninhadas e emojis para representar conexões.
-    - Se o modo for "Criativo", use analogias e histórias.
+    - Se o modo for "Criativo", use analogias e histórias envolventes, mas MANTENHA O RIGOR CIENTÍFICO. A criatividade é a "embalagem", mas o conteúdo técnico deve ser 100% preciso e reconhecível. Use sempre os termos biológicos corretos (ex: alelos, homozigoto, etc.) dentro da narrativa.
     - Se o modo for "Lógico", seja técnico e direto.
     - Se o modo for "Linguístico", use terminologia acadêmica.
     - Se o modo for "BNCC", priorize a linguagem e os conceitos alinhados à Base Nacional Comum Curricular do Brasil, citando competências ou habilidades quando relevante.
@@ -73,6 +73,16 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
     CAPACIDADE VISUAL (SVG DIAGRAMS):
     - Gere diagramas <svg> inline: viewBox="0 0 100 100", width="100%", height="auto".
     - Use EXCLUSIVAMENTE cores neon: Verde (#00ff9d), Azul (#00f0ff), Branco (#ffffff).
+    - IMPORTANTE: Todo diagrama deve ser INFORMATIVO. Use a tag <text> para incluir legendas, nomes de organelas ou ALELOS (em cruzamentos).
+    - GARANTA que todo o conteúdo (formas e textos) esteja dentro dos limites do viewBox (0 a 100). Use coordenadas seguras (ex: entre 5 e 95) para evitar cortes.
+    - ESTRUTURA RÍGIDA PARA QUADRADO DE PUNNETT (MENDEL):
+      1. Use uma grade (grid) centralizada. Para 1ª Lei (2x2), use células de 25x25. Para 2ª Lei (4x4), use células de 15x15.
+      2. ALELOS DOS PAIS: Devem estar FORA da grade principal, mas alinhados. 
+         - Pai (Topo): Coordenada Y fixa (ex: 15), X alinhado ao centro de cada coluna.
+         - Mãe (Esquerda): Coordenada X fixa (ex: 15), Y alinhado ao centro de cada linha.
+      3. RESULTADOS (DENTRO): Use text-anchor="middle" e dominant-baseline="middle" para centralizar o texto exatamente no meio de cada célula da grade.
+      4. NUNCA coloque informações de alelos abaixo do quadrado; eles devem ser as "âncoras" das linhas e colunas.
+      5. Use font-size pequeno (ex: 4 ou 5) para garantir que textos longos (ex: AaBb) caibam nas células.
 
     CONTEXTO:
     - Série: ${settings.gradeLevel}, Tema: ${settings.currentChapter || 'Geral'}.
