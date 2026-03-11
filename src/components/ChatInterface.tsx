@@ -334,21 +334,50 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
   const cleanMarkdown = (text: string, preserveSvg = false) => {
     let cleaned = text
       .replace(/\[SUGESTÃO:.*?\]/g, '')
-      .replace(/---GABARITO---[\s\S]*$/, '')
+      .replace(/---GABARITO---[\s\S]*$/, '');
+
+    if (preserveSvg) {
+      cleaned = cleaned.replace(/`{3}(?:svg|html)?\s*([\s\S]*?)`{3}/gi, '$1');
+    }
+
+    const placeholders: { key: string, val: string }[] = [];
+    
+    // Proteger SVGs
+    cleaned = cleaned.replace(/<svg[\s\S]*?<\/svg>/gi, (match) => {
+      const key = `__SVG_BLOCK_${placeholders.length}__`;
+      placeholders.push({ key, val: match });
+      return key;
+    });
+
+    // Proteger Imagens
+    cleaned = cleaned.replace(/!\[.*?\]\(.*?\)/g, (match) => {
+      const key = `__IMG_BLOCK_${placeholders.length}__`;
+      placeholders.push({ key, val: match });
+      return key;
+    });
+
+    cleaned = cleaned
       .replace(/#{1,6}\s?/g, '')
       .replace(/\*\*|__/g, '')
       .replace(/\*|_/g, '')
-      .replace(/\[(.*?)\]\(.*?\)/g, '$1')
       .replace(/`{1,3}[\s\S]*?`{1,3}/g, (match) => match.replace(/`/g, ''));
     
-    // Remove apenas marcadores de citação (>) no início de linhas, preservando símbolos matemáticos no meio do texto
     cleaned = cleaned.replace(/^>\s?/gm, '');
 
+    // Restaurar protegidos
+    placeholders.forEach(({ key, val }) => {
+      cleaned = cleaned.replace(key, val);
+    });
+
     if (!preserveSvg) {
+      cleaned = cleaned.replace(/!\[.*?\]\(.*?\)/g, '');
+      cleaned = cleaned.replace(/\[(.*?)\]\(.*?\)/g, '$1');
       cleaned = cleaned.replace(/<svg[\s\S]*?<\/svg>/g, '\n[Diagrama Biológico Gerado]\n');
     } else {
-      // Garante que os SVGs tenham o namespace necessário para exportação, sem duplicar
       cleaned = cleaned.replace(/<svg(?![^>]*xmlns="http:\/\/www\.w3\.org\/2000\/svg")/g, '<svg xmlns="http://www.w3.org/2000/svg"');
+      cleaned = cleaned.replace(/^\s*(?:svg|html)\s*(?=<svg)/gi, '');
+      // Garante dimensões para o html2canvas
+      cleaned = cleaned.replace(/<svg/g, '<svg width="100%" height="auto" style="max-width:100%;"');
     }
     
     return cleaned.trim();
@@ -366,26 +395,31 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     const preserveSvg = format === 'pdf' || format === 'doc';
     const clean = cleanMarkdown(text, preserveSvg);
     
-    if (format === 'whatsapp' && msgId) {
+    if ((format === 'pdf' || format === 'whatsapp') && msgId) {
         const element = document.getElementById(`msg-content-${msgId}`);
         if (!element) return;
 
         try {
-            // Geração de PDF de alta qualidade (vetorial/alta resolução)
+            setIsLoading(true);
+            // Renderização em Memória: Captura o elemento exatamente como ele aparece
             const canvas = await html2canvas(element, {
-                backgroundColor: '#0f172a', // slate-900
-                scale: 3, // Escala 3x para garantir nitidez total no zoom
-                logging: false,
+                backgroundColor: '#0f172a',
+                scale: 2,
                 useCORS: true,
+                allowTaint: true,
+                logging: false,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById(`msg-content-${msgId}`);
                     if (el) {
-                        el.style.padding = '40px';
-                        el.style.borderRadius = '0px';
-                        el.style.border = 'none';
-                        // Esconder elementos de UI que não devem sair no PDF
+                        el.style.padding = '30px';
+                        el.style.borderRadius = '0';
                         const uiElements = el.querySelectorAll('.print\\:hidden');
                         uiElements.forEach((e: any) => e.style.display = 'none');
+                        // Força visibilidade de SVGs no clone
+                        el.querySelectorAll('svg').forEach(svg => {
+                            svg.style.display = 'block';
+                            svg.style.margin = '20px auto';
+                        });
                     }
                 }
             });
@@ -394,70 +428,27 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'px',
-                format: [canvas.width / 3, canvas.height / 3]
+                format: [canvas.width / 2, canvas.height / 2]
             });
 
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3, undefined, 'FAST');
-            const pdfBlob = pdf.output('blob');
-            const file = new File([pdfBlob], `telloo-estudo-${Date.now()}.pdf`, { type: 'application/pdf' });
-
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Ficha de Estudo Telloo AI',
-                    text: 'Veja esta explicação detalhada que o Telloo gerou! 🧬'
-                });
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2, undefined, 'FAST');
+            
+            if (format === 'whatsapp') {
+                const pdfBlob = pdf.output('blob');
+                const file = new File([pdfBlob], `telloo-estudo-${Date.now()}.pdf`, { type: 'application/pdf' });
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Ficha de Estudo Telloo AI' });
+                } else {
+                    pdf.save(`telloo-estudo-${Date.now()}.pdf`);
+                }
             } else {
-                // Fallback para download se o navegador não suportar compartilhamento de arquivos
                 pdf.save(`telloo-estudo-${Date.now()}.pdf`);
-                alert("Sua ficha de estudo em PDF de alta qualidade foi gerada! Agora você pode enviá-la pelo WhatsApp.");
             }
         } catch (err) {
-            console.error("Erro ao compartilhar PDF:", err);
-            const encodedText = encodeURIComponent(`🧬 *Dica de Estudo do Telloo AI*\n\n${cleanMarkdown(text).substring(0, 1500)}`);
-            window.open(`https://wa.me/?text=${encodedText}`, '_blank');
-        }
-        return;
-    }
-
-    if (format === 'pdf') {
-        const printWindow = window.open('', '_blank');
-        if (printWindow) {
-            // Converter quebras de linha em <br> para o PDF se não for SVG
-            const htmlContent = clean.replace(/\n/g, '<br>').replace(/<br><svg/g, '<svg').replace(/<\/svg><br>/g, '</svg>');
-            
-            printWindow.document.write(`
-                <html>
-                    <head>
-                        <title>Ficha de Estudo - Telloo</title>
-                        <style>
-                            body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #333; line-height: 1.6; background: white; }
-                            h1 { color: #064e3b; border-bottom: 2px solid #00ff9d; padding-bottom: 10px; margin-bottom: 20px; font-family: sans-serif; text-transform: uppercase; letter-spacing: 2px; }
-                            .content { margin-bottom: 30px; font-size: 14px; color: black; }
-                            svg { max-width: 400px; height: auto; display: block; margin: 20px auto; border: 1px solid #eee; padding: 10px; border-radius: 8px; }
-                            .footer { font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 10px; text-align: center; margin-top: 40px; }
-                            @media print {
-                                body { padding: 0; }
-                                svg { page-break-inside: avoid; }
-                            }
-                        </style>
-                    </head>
-                    <body>
-                        <h1>TELLOO - FICHA DE ESTUDO</h1>
-                        <div class="content">${htmlContent}</div>
-                        <div class="footer">Gerado por Telloo AI • Especialista em Biologia • Alinhado à BNCC</div>
-                        <script>
-                            window.onload = () => {
-                                setTimeout(() => {
-                                    window.print();
-                                    // window.close(); // Opcional: fechar após imprimir
-                                }, 800);
-                            };
-                        </script>
-                    </body>
-                </html>
-            `);
-            printWindow.document.close();
+            console.error("Erro na exportação PDF:", err);
+            alert("Erro ao gerar PDF. Tente copiar o texto.");
+        } finally {
+            setIsLoading(false);
         }
         return;
     }
@@ -467,7 +458,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             <head><meta charset='utf-8'></head>
             <body>
                 <div style="font-family: 'Segoe UI', sans-serif; padding: 20px;">
-                    ${clean.replace(/\n/g, '<br>').replace(/<br><svg/g, '<svg').replace(/<\/svg><br>/g, '</svg>')}
+                    ${clean.replace(/\n/g, '<br>').replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;height:auto;border-radius:12px;margin:20px 0;display:block;" />').replace(/<br><svg/g, '<svg').replace(/<\/svg><br>/g, '</svg>')}
                 </div>
             </body>
             </html>
@@ -582,23 +573,29 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     const title = `Relatório de Estudo Telloo - ${currentTopic || 'Biologia'}`;
     const timestamp = new Date().toLocaleString('pt-BR');
 
-    if (format === 'whatsapp') {
+    if (format === 'pdf' || format === 'whatsapp') {
         const element = scrollContainerRef.current;
         if (!element) return;
         setShowExportMenu(false);
+        setIsLoading(true);
 
         try {
             const canvas = await html2canvas(element, {
                 backgroundColor: '#0f172a',
                 scale: 2,
-                logging: false,
                 useCORS: true,
+                allowTaint: true,
+                logging: false,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.querySelector('main');
                     if (el) {
                         el.style.padding = '40px';
                         const uiElements = el.querySelectorAll('.print\\:hidden');
                         uiElements.forEach((e: any) => e.style.display = 'none');
+                        // Garante que SVGs sejam capturados
+                        el.querySelectorAll('svg').forEach(svg => {
+                            svg.style.display = 'block';
+                        });
                     }
                 }
             });
@@ -611,30 +608,24 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             });
 
             pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2, undefined, 'FAST');
-            const pdfBlob = pdf.output('blob');
-            const file = new File([pdfBlob], `telloo-relatorio-${Date.now()}.pdf`, { type: 'application/pdf' });
-
-            if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                await navigator.share({
-                    files: [file],
-                    title: 'Relatório de Estudo Telloo AI',
-                    text: `Confira meu progresso de estudo sobre ${currentTopic || 'Biologia'}! 🧬`
-                });
+            
+            if (format === 'whatsapp') {
+                const pdfBlob = pdf.output('blob');
+                const file = new File([pdfBlob], `telloo-relatorio-${Date.now()}.pdf`, { type: 'application/pdf' });
+                if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file], title: 'Relatório Telloo AI' });
+                } else {
+                    pdf.save(`telloo-relatorio-${Date.now()}.pdf`);
+                }
             } else {
                 pdf.save(`telloo-relatorio-${Date.now()}.pdf`);
-                alert("Seu relatório em PDF foi gerado! Agora você pode enviá-lo pelo WhatsApp.");
             }
         } catch (err) {
-            console.error("Erro ao compartilhar PDF:", err);
-            const encodedText = encodeURIComponent(`🧬 *Relatório de Estudo Telloo AI*\n*Tema:* ${currentTopic || 'Biologia'}\n\nConfira no Telloo!`);
-            window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+            console.error("Erro ao exportar PDF:", err);
+            alert("Erro ao gerar PDF.");
+        } finally {
+            setIsLoading(false);
         }
-        return;
-    }
-
-    if (format === 'pdf') {
-        setShowExportMenu(false);
-        setTimeout(() => window.print(), 200);
         return;
     }
     if (format === 'txt') {
@@ -659,7 +650,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 ${messages.map(m => `
                     <div style="margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
                         <strong style="color: #064e3b; text-transform: uppercase; font-size: 10pt;">${m.role === 'user' ? 'Estudante' : 'Assistente Telloo'}:</strong>
-                        <div style="margin-top: 10px;">${cleanMarkdown(m.text, true).replace(/\n/g, '<br>').replace(/<br><svg/g, '<svg').replace(/<\/svg><br>/g, '</svg>')}</div>
+                        <div style="margin-top: 10px;">${cleanMarkdown(m.text, true).replace(/\n/g, '<br>').replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width:100%;height:auto;border-radius:12px;margin:20px 0;display:block;" />').replace(/<br><svg/g, '<svg').replace(/<\/svg><br>/g, '</svg>')}</div>
                     </div>
                 `).join('')}
             </body>
@@ -923,7 +914,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
           return (
               <div className="my-6 p-4 bg-black/40 rounded-2xl border border-telloo-neonGreen/20 shadow-[0_0_15px_rgba(0,255,157,0.1)] overflow-hidden relative group print:bg-white print:border-black print:shadow-none">
                   <div className="flex justify-center items-center w-full min-h-[100px] print:filter-none">
-                      <svg {...cleanProps} style={{ maxWidth: '100%', height: 'auto', display: 'block' }} className="drop-shadow-[0_0_10px_rgba(0,255,157,0.2)] print:drop-shadow-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" {...cleanProps} style={{ maxWidth: '100%', height: 'auto', display: 'block' }} className="drop-shadow-[0_0_10px_rgba(0,255,157,0.2)] print:drop-shadow-none">
                           {children}
                       </svg>
                   </div>
@@ -1239,12 +1230,12 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 <input ref={inputRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={isListening ? "Pode falar, estou ouvindo... 🎙️" : "O que vamos aprender hoje?"} className="flex-1 bg-black/20 backdrop-blur-sm border border-white/5 rounded-2xl p-4 focus:border-telloo-neonGreen/50 outline-none text-sm shadow-inner transition-all" />
                 <button 
                    onClick={toggleListening} 
-                   className={`p-4 rounded-2xl transition-all border ${isListening ? 'bg-red-500/10 border-red-500/50 text-red-500 animate-pulse' : 'bg-white/5 border-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+                   className={`p-3 rounded-2xl transition-all border ${isListening ? 'bg-red-500/10 border-red-500/50 text-red-500 animate-pulse' : 'bg-white/5 border-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
                    title={isListening ? "Telloo está ouvindo... 🎙️" : "Falar com o Telloo"}
                  >
-                   <Mic size={20} />
+                   <Mic size={18} />
                  </button>
-                 <button onClick={() => handleSend()} disabled={!inputText.trim() || isLoading} className="p-4 bg-telloo-neonGreen text-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(0,255,157,0.2)]"><Send size={20}/></button>
+                 <button onClick={() => handleSend()} disabled={!inputText.trim() || isLoading} className="p-3 bg-telloo-neonGreen text-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(0,255,157,0.2)]"><Send size={18}/></button>
             </div>
         </div>
       </footer>
