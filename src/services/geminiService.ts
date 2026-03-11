@@ -57,6 +57,11 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
     - Você DEVE separar a pergunta do gabarito usando EXATAMENTE o delimitador: ---GABARITO---
     - Após o delimitador, forneça a resposta correta e uma breve justificativa.
 
+    DICA CULTURAL (CINE-BIO):
+    - Logo após a explicação técnica e ANTES da pergunta de verificação, você DEVE incluir uma seção chamada "### 🎬 Cine-Bio".
+    - Sugira um filme, documentário ou série que tenha relação direta com o tema biológico discutido.
+    - Explique em uma frase curta como a obra se conecta ao conceito científico.
+
     ESTRUTURA DE QUESTÕES:
     - Ao gerar questões de múltipla escolha (Objetiva, ENEM ou PROVA), use o formato:
       a) Texto da opção
@@ -72,6 +77,8 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
 
     CAPACIDADE VISUAL (HÍBRIDA):
     - MODO SVG (Diagramas e Lógica): Use para fluxogramas, genética e esquemas.
+      * IDIOMA OBRIGATÓRIO: Todo texto dentro do SVG (legendas, rótulos, alelos) deve estar obrigatoriamente em Português do Brasil.
+      * OBRIGATÓRIO: Sempre inclua o atributo viewBox="0 0 100 100" (ou dimensões apropriadas) na tag <svg> para garantir visibilidade em exportações.
       * ESTÉTICA AVANÇADA: Use <defs> com <linearGradient> e <filter id="shadow"> (feDropShadow) para dar profundidade.
       * Use cores neon com opacidades variadas.
       * ESTRUTURA RÍGIDA PARA QUADRADO DE PUNNETT (MENDEL):
@@ -84,7 +91,7 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
         5. Use font-size pequeno (ex: 4 ou 5) para garantir que textos longos (ex: AaBb) caibam nas células.
     
     - MODO ILUSTRAÇÃO (Alta Qualidade): Para estruturas biológicas complexas (células, órgãos, animais, ecossistemas), use o marcador:
-      [IMAGE_PROMPT: descrição detalhada e técnica em inglês para uma ilustração biológica profissional, nítida, estilo livro didático moderno, fundo escuro]
+      [IMAGE_PROMPT: descrição detalhada e técnica em inglês para uma ilustração biológica profissional, nítida, estilo livro didático moderno, fundo escuro. MANDATORY: Any text or labels within the image must be in Portuguese (Brazil)]
       * Use este modo apenas quando um SVG não for suficiente para mostrar detalhes nítidos.
 
     CONTEXTO:
