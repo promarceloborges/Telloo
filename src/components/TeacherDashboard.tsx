@@ -28,7 +28,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
         // Importação dinâmica para evitar quebra na carga inicial (tela branca)
         const pdfjs = await import('pdfjs-dist');
         // Configuração segura do worker
-        const version = pdfjs.version || '3.11.174';
+        const version = '3.11.174';
         pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${version}/pdf.worker.min.js`;
         
         const arrayBuffer = await file.arrayBuffer();

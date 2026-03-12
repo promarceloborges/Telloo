@@ -401,9 +401,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
 
         try {
             setIsLoading(true);
-            // Renderização em Memória: Captura o elemento exatamente como ele aparece
             const canvas = await html2canvas(element, {
-                backgroundColor: '#0f172a',
+                backgroundColor: '#ffffff',
                 scale: 2,
                 useCORS: true,
                 allowTaint: true,
@@ -411,15 +410,74 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById(`msg-content-${msgId}`);
                     if (el) {
-                        el.style.padding = '30px';
+                        // Estilo de Folha Limpa
+                        el.style.backgroundColor = '#ffffff';
+                        el.style.color = '#1a1a1a';
+                        el.style.padding = '50px';
                         el.style.borderRadius = '0';
+                        el.style.border = 'none';
+                        el.style.boxShadow = 'none';
+
+                        // Ajustar todo o texto para preto/cinza escuro
+                        const textElements = el.querySelectorAll('p, span, li, div, h1, h2, h3, strong');
+                        textElements.forEach((node: any) => {
+                            node.style.color = '#1a1a1a';
+                            node.style.backgroundColor = 'transparent';
+                            node.style.textShadow = 'none';
+                        });
+
+                        // Títulos em verde escuro profissional
+                        el.querySelectorAll('h1, h2, h3').forEach((h: any) => {
+                            h.style.color = '#064e3b';
+                            h.style.borderBottom = '1px solid #eee';
+                        });
+
+                        // Ajustar SVGs para fundo branco
+                        el.querySelectorAll('svg').forEach((svg: any) => {
+                            svg.style.display = 'block';
+                            svg.style.margin = '30px auto';
+                            svg.style.backgroundColor = '#fcfcfc';
+                            svg.style.border = '1px solid #eee';
+                            svg.style.padding = '20px';
+                            svg.style.borderRadius = '12px';
+                            svg.style.filter = 'none';
+                            
+                            // Converter cores neon para cores de impressão
+                            svg.querySelectorAll('text, path, circle, rect, line').forEach((p: any) => {
+                                const stroke = p.getAttribute('stroke');
+                                const fill = p.getAttribute('fill');
+                                if (stroke === '#00ff9d' || stroke === 'rgb(0, 255, 157)') p.setAttribute('stroke', '#059669');
+                                if (fill === '#00ff9d' || fill === 'rgb(0, 255, 157)') p.setAttribute('fill', '#059669');
+                                if (stroke === '#00e5ff') p.setAttribute('stroke', '#0369a1');
+                                if (fill === '#00e5ff') p.setAttribute('fill', '#0369a1');
+                            });
+                        });
+
+                        // Esconder elementos de interface
                         const uiElements = el.querySelectorAll('.print\\:hidden');
                         uiElements.forEach((e: any) => e.style.display = 'none');
-                        // Força visibilidade de SVGs no clone
-                        el.querySelectorAll('svg').forEach(svg => {
-                            svg.style.display = 'block';
-                            svg.style.margin = '20px auto';
-                        });
+                        
+                        // Adicionar cabeçalho de relatório
+                        const header = clonedDoc.createElement('div');
+                        header.innerHTML = `
+                            <div style="border-bottom: 2px solid #064e3b; margin-bottom: 30px; padding-bottom: 15px; font-family: sans-serif;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                                    <div style="text-align: left; font-size: 10px; color: #666; font-weight: normal;">
+                                        Inteligência Biológica!
+                                    </div>
+                                    <div style="text-align: right; font-size: 10px; color: #666; font-weight: normal;">
+                                        Gerado em ${new Date().toLocaleString('pt-BR')}
+                                    </div>
+                                </div>
+                                <div style="text-align: center; font-weight: bold; color: #064e3b; font-size: 16px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px;">
+                                    TELLOO
+                                </div>
+                                <div style="text-align: center; font-weight: bold; color: #064e3b; font-size: 16px; text-transform: uppercase; letter-spacing: 2px;">
+                                    FICHA DE ESTUDO
+                                </div>
+                            </div>
+                        `;
+                        el.prepend(header);
                     }
                 }
             });
@@ -437,7 +495,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], `telloo-estudo-${Date.now()}.pdf`, { type: 'application/pdf' });
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: 'Ficha de Estudo Telloo AI' });
+                    await navigator.share({ files: [file], title: 'Ficha de Estudo Telloo - Inteligência Biológica!' });
                 } else {
                     pdf.save(`telloo-estudo-${Date.now()}.pdf`);
                 }
@@ -452,6 +510,18 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
         }
         return;
     }
+
+    if (format === 'pdf' && !msgId) {
+        // Fallback se o ID não for passado (não deve acontecer com os botões corrigidos)
+        const blob = new Blob([clean], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `telloo-estudo-${Date.now()}.pdf`;
+        link.click();
+        return;
+    }
+
     if (format === 'doc') {
         const html = `
             <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
@@ -463,11 +533,11 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             </body>
             </html>
         `;
-        const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+        const blob = new Blob(['\ufeff', html], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `telloo-estudo-${Date.now()}.doc`;
+        link.download = `telloo-estudo-${Date.now()}.docx`;
         link.click();
         return;
     }
@@ -475,11 +545,11 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `telloo-estudo-${Date.now()}.${format === 'txt' ? 'txt' : 'doc'}`;
+    link.download = `telloo-estudo-${Date.now()}.txt`;
     link.click();
   };
 
-  const handleSend = async (text?: string, mode?: ResponseMode, isSilent = false) => {
+    const handleSend = async (text?: string, mode?: ResponseMode, isSilent = false) => {
     const textToSend = text || inputText;
     if (!textToSend.trim()) return;
 
@@ -488,7 +558,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     // Atualiza o tópico atual se a mensagem for substancial e não for uma pergunta meta
     if (!isSilent) {
         const isMetaQuestion = /^(quem é você|o que você faz|como você ajuda|quais suas capacidades|quem criou você|quem é o telloo)/i.test(textToSend.toLowerCase());
-        if (!isMetaQuestion && textToSend.length > 20) {
+        if (!isMetaQuestion && textToSend.length > 3) {
             const newTopic = textToSend.length > 60 ? textToSend.substring(0, 60) + "..." : textToSend;
             if (newTopic !== currentTopic) {
                 setCurrentTopic(newTopic);
@@ -499,6 +569,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
         }
     }
     
+    let currentHistory = [...messages];
     if (!isSilent) {
         const userMsg: Message = { 
             id: Date.now().toString(), 
@@ -507,7 +578,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             mode: modeToUse, 
             timestamp: Date.now() 
         };
-        setMessages(prev => [...prev, userMsg]);
+        currentHistory = [...currentHistory, userMsg];
+        setMessages(currentHistory);
     }
 
     setInputText('');
@@ -515,17 +587,19 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     setHasError(false);
 
     const modelMsgId = (Date.now() + 1).toString();
-    setMessages(prev => [...prev, { 
+    const modelMsg: Message = { 
         id: modelMsgId, 
         role: 'model', 
         text: '', 
         isStreaming: true, 
         mode: modeToUse,
         timestamp: Date.now() 
-    }]);
+    };
+    
+    setMessages(prev => [...prev, modelMsg]);
 
     try {
-        await streamMessageToGemini([...messages], textToSend, modeToUse, settings, (chunk) => {
+        await streamMessageToGemini(currentHistory, textToSend, modeToUse, settings, (chunk) => {
             setMessages(prev => prev.map(m => m.id === modelMsgId ? { ...m, text: chunk } : m));
         });
         setMessages(prev => prev.map(m => m.id === modelMsgId ? { ...m, isStreaming: false } : m));
@@ -581,7 +655,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
 
         try {
             const canvas = await html2canvas(element, {
-                backgroundColor: '#0f172a',
+                backgroundColor: '#ffffff',
                 scale: 2,
                 useCORS: true,
                 allowTaint: true,
@@ -589,13 +663,77 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.querySelector('main');
                     if (el) {
-                        el.style.padding = '40px';
+                        // Estilo de Relatório Limpo
+                        el.style.backgroundColor = '#ffffff';
+                        el.style.color = '#1a1a1a';
+                        el.style.padding = '60px';
+                        
+                        // Ajustar todas as mensagens no relatório
+                        const messages = el.querySelectorAll('[id^="msg-content-"]');
+                        messages.forEach((msg: any) => {
+                            msg.style.backgroundColor = '#ffffff';
+                            msg.style.color = '#1a1a1a';
+                            msg.style.border = 'none';
+                            msg.style.borderBottom = '1px solid #eee';
+                            msg.style.marginBottom = '30px';
+                            msg.style.padding = '20px 0';
+                            msg.style.boxShadow = 'none';
+                            
+                            // Ajustar textos internos
+                            msg.querySelectorAll('p, span, li, h1, h2, h3, strong').forEach((node: any) => {
+                                node.style.color = '#1a1a1a';
+                                node.style.textShadow = 'none';
+                            });
+
+                            // Títulos
+                            msg.querySelectorAll('h1, h2, h3').forEach((h: any) => {
+                                h.style.color = '#064e3b';
+                            });
+
+                            // SVGs
+                            msg.querySelectorAll('svg').forEach((svg: any) => {
+                                svg.style.display = 'block';
+                                svg.style.filter = 'none';
+                                svg.style.backgroundColor = '#fcfcfc';
+                                svg.style.border = '1px solid #eee';
+                                svg.style.padding = '15px';
+                                
+                                svg.querySelectorAll('text, path, circle, rect, line').forEach((p: any) => {
+                                    const stroke = p.getAttribute('stroke');
+                                    const fill = p.getAttribute('fill');
+                                    if (stroke === '#00ff9d' || stroke === 'rgb(0, 255, 157)') p.setAttribute('stroke', '#059669');
+                                    if (fill === '#00ff9d' || fill === 'rgb(0, 255, 157)') p.setAttribute('fill', '#059669');
+                                });
+                            });
+                        });
+
                         const uiElements = el.querySelectorAll('.print\\:hidden');
                         uiElements.forEach((e: any) => e.style.display = 'none');
-                        // Garante que SVGs sejam capturados
-                        el.querySelectorAll('svg').forEach(svg => {
-                            svg.style.display = 'block';
-                        });
+
+                        // Adicionar cabeçalho de relatório completo
+                        const header = clonedDoc.createElement('div');
+                        header.innerHTML = `
+                            <div style="border-bottom: 3px solid #064e3b; margin-bottom: 40px; padding-bottom: 20px; font-family: sans-serif;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <div style="text-align: left; font-size: 12px; color: #666; font-weight: normal;">
+                                        Inteligência Biológica!
+                                    </div>
+                                    <div style="text-align: right; font-size: 12px; color: #666; font-weight: normal;">
+                                        Data: ${new Date().toLocaleDateString('pt-BR')}
+                                    </div>
+                                </div>
+                                <div style="text-align: center; font-weight: bold; color: #064e3b; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">
+                                    TELLOO
+                                </div>
+                                <div style="text-align: center; font-weight: bold; color: #064e3b; font-size: 22px; text-transform: uppercase; letter-spacing: 2px;">
+                                    RELATÓRIO DE ESTUDO
+                                </div>
+                                <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                                    <span>Tópico: ${currentTopic || 'Biologia'}</span>
+                                </div>
+                            </div>
+                        `;
+                        el.prepend(header);
                     }
                 }
             });
@@ -613,7 +751,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 const pdfBlob = pdf.output('blob');
                 const file = new File([pdfBlob], `telloo-relatorio-${Date.now()}.pdf`, { type: 'application/pdf' });
                 if (navigator.share && navigator.canShare && navigator.canShare({ files: [file] })) {
-                    await navigator.share({ files: [file], title: 'Relatório Telloo AI' });
+                    await navigator.share({ files: [file], title: 'Relatório Telloo - Inteligência Biológica!' });
                 } else {
                     pdf.save(`telloo-relatorio-${Date.now()}.pdf`);
                 }
@@ -646,7 +784,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             <head><meta charset='utf-8'><title>${title}</title></head>
             <body>
                 <h1>${title}</h1>
-                <div style="color: #666; margin-bottom: 20px;">Relatório Educacional Telloo AI • Professor(a): ${userName} • ${timestamp}</div>
+                <div style="color: #666; margin-bottom: 20px;">Relatório Educacional Telloo - Inteligência Biológica! • Professor(a): ${userName} • ${timestamp}</div>
                 ${messages.map(m => `
                     <div style="margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 10px;">
                         <strong style="color: #064e3b; text-transform: uppercase; font-size: 10pt;">${m.role === 'user' ? 'Estudante' : 'Assistente Telloo'}:</strong>
@@ -656,19 +794,30 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             </body>
             </html>
         `;
-        const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+        const blob = new Blob(['\ufeff', html], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `telloo-bio-${Date.now()}.doc`;
+        link.download = `telloo-bio-${Date.now()}.docx`;
         link.click();
     }
     setShowExportMenu(false);
   };
 
   const handleModeSelect = (mode: ResponseMode) => {
-    if (mode === selectedMode && messages.length > 1) return;
+    if (mode === selectedMode && messages.length > 1 && !inputText.trim()) return;
     setSelectedMode(mode);
+    
+    const pendingInput = inputText.trim();
+    const topicContext = pendingInput || currentTopic || settings.currentChapter || "Biologia";
+
+    if (pendingInput) {
+        // Garantir que o tópico seja atualizado mesmo para inputs curtos ao trocar de modo
+        setCurrentTopic(pendingInput);
+        handleSend(pendingInput, mode);
+        return;
+    }
+
     if (messages.length > 1) {
         const modeFeedback = {
             [ResponseMode.MIND_MAP]: "Entendido! A partir de agora vou estruturar minhas respostas como um **Mapa Mental**. 🧠",
@@ -679,8 +828,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
         };
         
         let text = modeFeedback[mode];
-        if (currentTopic) {
-            text += `\n\nPercebi que estávamos estudando **${currentTopic}**. Gostaria que eu re-explicasse este assunto usando este novo estilo ${mode}?`;
+        if (topicContext && topicContext !== "Biologia") {
+            text += `\n\nPercebi que estamos focados em **${topicContext}**. Gostaria que eu explicasse este assunto usando este novo estilo ${mode}?`;
         }
 
         setMessages(prev => [...prev, {
@@ -691,7 +840,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             mode: mode
         }]);
     } else {
-        handleSend(`Ative o modo ${mode}. Me dê uma breve introdução sobre como vamos trabalhar!`, mode);
+        handleSend(`Ative o modo ${mode}. Vamos estudar sobre ${topicContext}! Me dê uma introdução nesse estilo.`, mode);
     }
   };
 
@@ -948,8 +1097,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                         </button>
                         <div className="absolute right-0 top-full mt-1 hidden group-hover/exp:block bg-slate-800 border border-white/10 rounded-lg shadow-xl overflow-hidden z-30">
                             <button onClick={() => exportSingleBlock(msg.text, 'txt')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.TXT</button>
-                            <button onClick={() => exportSingleBlock(msg.text, 'doc')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.DOC</button>
-                            <button onClick={() => exportSingleBlock(msg.text, 'pdf')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.PDF</button>
+                            <button onClick={() => exportSingleBlock(msg.text, 'doc')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.DOCX</button>
+                            <button onClick={() => exportSingleBlock(msg.text, 'pdf', msg.id)} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.PDF</button>
                             <button onClick={() => exportSingleBlock(msg.text, 'whatsapp', msg.id)} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 text-green-400">WHATSAPP</button>
                         </div>
                     </div>
@@ -1191,7 +1340,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 {showExportMenu && (
                     <div className="absolute right-0 mt-2 w-32 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
                         <button onClick={() => exportChat('txt')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .TXT</button>
-                        <button onClick={() => exportChat('docx')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .DOC</button>
+                        <button onClick={() => exportChat('docx')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .DOCX</button>
                         <button onClick={() => exportChat('pdf')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .PDF</button>
                         <button onClick={() => exportChat('whatsapp')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center gap-2 text-green-400"><MessageCircle size={12}/> WhatsApp</button>
                     </div>
