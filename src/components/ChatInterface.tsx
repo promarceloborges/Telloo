@@ -5,7 +5,7 @@ import { jsPDF } from 'jspdf';
 import { Message, ResponseMode, TeacherSettings, QuestionType } from '../types';
 import { streamMessageToGemini, streamQuestions, generateDeepDiveContent, generateSimulationMission, generateLearningPath } from '../services/geminiService';
 import Mascot from './Mascot';
-import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap, Mic, MessageCircle } from 'lucide-react';
+import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap, Mic, MessageCircle, LogOut } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -14,9 +14,10 @@ interface Props {
   userName: string;
   settings: TeacherSettings;
   onOpenSettings: () => void;
+  onLogout: () => void;
 }
 
-const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) => {
+const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, onLogout }) => {
   const [messages, setMessages] = useState<Message[]>(() => {
     try {
       const saved = localStorage.getItem('telloo_chat_history');
@@ -1469,6 +1470,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             </div>
             <button onClick={clearChat} className="p-2 text-gray-500 hover:text-red-400 transition-colors" title="Limpar Histórico"><Eraser size={18}/></button>
             <button onClick={onOpenSettings} className="p-2 text-telloo-neonGreen hover:scale-110 transition-transform" title="Configurações"><Settings size={20}/></button>
+            <button onClick={onLogout} className="p-2 text-gray-500 hover:text-red-400 transition-colors" title="Sair"><LogOut size={18}/></button>
         </div>
       </header>
 
