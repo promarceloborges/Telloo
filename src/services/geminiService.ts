@@ -2,6 +2,8 @@
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Message, ResponseMode, TeacherSettings, QuestionRequest } from "../types";
 
+const BOOK_URL = "https://github.com/promarceloborges/Biologia-Amabis-e-Martho/raw/main/Moderna-Plus-Biologia-Amabis-Martho-1_compressed.pdf";
+
 const cleanText = (response: GenerateContentResponse): string => {
     return response.text || "Desculpe, não consegui processar a resposta.";
 };
@@ -96,7 +98,8 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
 
     CONTEXTO:
     - Série: ${settings.gradeLevel}, Tema: ${settings.currentChapter || 'Geral'}.
-    ${settings.pdfContent ? `Baseie-se prioritariamente neste conteúdo (Material de Apoio do Professor): ${settings.pdfContent.substring(0, 1000000)}` : ''}
+    - Referência Principal: Livro Moderna Plus Biologia (Amabis e Martho) disponível em ${BOOK_URL}.
+    ${settings.pdfContent ? `Baseie-se também neste conteúdo adicional (Material de Apoio do Professor): ${settings.pdfContent.substring(0, 500000)}` : ''}
 
     REGRAS:
     - Nunca saia do tema Biologia.
@@ -121,10 +124,11 @@ export const streamMessageToGemini = async (
       await withRetry(async () => {
         const responseStream = await ai.models.generateContentStream({
           model: 'gemini-3-flash-preview',
-          contents: [...recentHistory, { role: 'user', parts: [{ text: `[MODO: ${mode}] [ASSUNTO PRIORITÁRIO: ${settings.currentChapter || 'Biologia'}] ${newMessage}. Foque exclusivamente no conteúdo biológico, não descreva suas funções.` }] }],
+          contents: [...recentHistory, { role: 'user', parts: [{ text: `[MODO: ${mode}] [ASSUNTO PRIORITÁRIO: ${settings.currentChapter || 'Biologia'}] [REFERÊNCIA: ${BOOK_URL}] ${newMessage}. Foque exclusivamente no conteúdo biológico, não descreva suas funções.` }] }],
           config: {
             systemInstruction: getSystemInstruction(settings),
             temperature: 0.7,
+            tools: [{ urlContext: {} }]
           }
         });
     
@@ -200,8 +204,11 @@ export const streamQuestions = async (
       await withRetry(async () => {
         const responseStream = await ai.models.generateContentStream({
             model: 'gemini-3-flash-preview',
-            contents: prompt,
-            config: { systemInstruction: getSystemInstruction(settings) }
+            contents: `[REFERÊNCIA: ${BOOK_URL}] ${prompt}`,
+            config: { 
+              systemInstruction: getSystemInstruction(settings),
+              tools: [{ urlContext: {} }]
+            }
         });
 
         let fullText = '';
@@ -223,8 +230,11 @@ export const generateDeepDiveContent = async (topic: string, history: Message[],
         const ai = new GoogleGenAI({ apiKey: apiKey! });
         const response = await withRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `[DEEP_DIVE] Explique o assunto: ${topic}. OBRIGATÓRIO: Inclua um diagrama SVG SIMPLES e limpo para ilustrar a explicação de forma rápida.`,
-            config: { systemInstruction: getSystemInstruction(settings) }
+            contents: `[DEEP_DIVE] [REFERÊNCIA: ${BOOK_URL}] Explique o assunto: ${topic}. OBRIGATÓRIO: Inclua um diagrama SVG SIMPLES e limpo para ilustrar a explicação de forma rápida.`,
+            config: { 
+              systemInstruction: getSystemInstruction(settings),
+              tools: [{ urlContext: {} }]
+            }
         }));
         return cleanText(response);
     } catch (error) { return "Erro no protocolo de aprofundamento."; }
@@ -236,7 +246,7 @@ export const generateSimulationMission = async (topic: string, settings: Teacher
         const ai = new GoogleGenAI({ apiKey: apiKey! });
         const response = await withRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `Gere uma missão de simulação para o Bio Sandbox sobre o tema: ${topic}. 
+            contents: `[SIMULATION] [REFERÊNCIA: ${BOOK_URL}] Gere uma missão de simulação para o Bio Sandbox sobre o tema: ${topic}. 
             A missão deve ter um controle deslizante (0-100).
             Retorne um JSON com:
             {
@@ -254,7 +264,8 @@ export const generateSimulationMission = async (topic: string, settings: Teacher
             }`,
             config: { 
                 systemInstruction: getSystemInstruction(settings),
-                responseMimeType: "application/json"
+                responseMimeType: "application/json",
+                tools: [{ urlContext: {} }]
             }
         }));
         return JSON.parse(response.text || "{}");
