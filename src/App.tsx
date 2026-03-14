@@ -97,6 +97,15 @@ function App() {
     setCurrentView('chat');
   };
 
+  const handleLogout = () => {
+    setUserName('');
+    setCurrentView('landing');
+    localStorage.removeItem('telloo_user_name');
+    localStorage.removeItem('telloo_current_view');
+    localStorage.removeItem('telloo_chat_history');
+    localStorage.removeItem('telloo_current_topic');
+  };
+
   return (
     <div className="font-sans text-white min-h-screen">
       {currentView === 'landing' ? (
@@ -107,6 +116,7 @@ function App() {
             userName={userName} 
             settings={teacherSettings} 
             onOpenSettings={() => setIsSettingsOpen(true)}
+            onLogout={handleLogout}
           />
           <TeacherDashboard 
             isOpen={isSettingsOpen} 
