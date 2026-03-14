@@ -11,6 +11,7 @@
     background: linear-gradient(135deg, #020617 0%, #064e3b 100%);
     color: white;
     min-height: 100vh;
+    font-size: 15px;
   }
 }
 
