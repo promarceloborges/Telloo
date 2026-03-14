@@ -1320,6 +1320,11 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                             <h3 className="text-[13px] font-bold uppercase tracking-widest">{currentMission.title}</h3>
                         </div>
                         <div className="space-y-2 text-[11px] leading-relaxed">
+                            {currentMission.context && (
+                                <div className="bg-white/5 p-3 rounded-xl border border-white/5 mb-2">
+                                    <p className="text-gray-400 italic leading-relaxed">{currentMission.context}</p>
+                                </div>
+                            )}
                             <p><strong className="text-telloo-neonGreen uppercase">Problema:</strong> {currentMission.problem}</p>
                             <div className="bg-telloo-neonBlue/5 p-3 rounded-lg border border-telloo-neonBlue/20 flex gap-2">
                                 <Target size={14} className="text-telloo-neonBlue shrink-0"/>
