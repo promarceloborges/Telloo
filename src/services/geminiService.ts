@@ -48,6 +48,12 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
     - Se o modo for "Linguístico", use terminologia acadêmica.
     - Se o modo for "BNCC", priorize a linguagem e os conceitos alinhados à Base Nacional Comum Curricular do Brasil, citando competências ou habilidades quando relevante.
 
+    DIRETRIZES PEDAGÓGICAS (ENEM & SAEB):
+    - Ao explicar conteúdos ou gerar questões, siga rigorosamente a Matriz de Referência do ENEM e os Descritores do SAEB para Biologia.
+    - Priorize a contextualização e a interdisciplinaridade, focando em situações-problema do cotidiano e impactos socioambientais.
+    - Use os Descritores do SAEB para estruturar o nível de complexidade cognitiva das respostas e perguntas.
+    - Quando o modo for "ENEM", foque em Competências de Área e Habilidades específicas da Matriz de Ciências da Natureza.
+
     VERIFICAÇÃO DE APRENDIZADO (OBRIGATÓRIO):
     - Ao final de cada explicação ou conteúdo, você DEVE incluir uma seção chamada "### 📝 Pergunta de Verificação".
     - Gere uma pergunta curta de múltipla escolha para validar o entendimento imediato.
@@ -238,6 +244,34 @@ export const generateDeepDiveContent = async (topic: string, history: Message[],
         }));
         return cleanText(response);
     } catch (error) { return "Erro no protocolo de aprofundamento."; }
+};
+
+export const generateLearningPath = async (topic: string, userAnswers: string, correctAnswers: string, settings: TeacherSettings): Promise<string> => {
+    try {
+        const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+        const ai = new GoogleGenAI({ apiKey: apiKey! });
+        const response = await withRetry(() => ai.models.generateContent({
+            model: 'gemini-3-flash-preview',
+            contents: `[LEARNING_PATH] [REFERÊNCIA: ${BOOK_URL}] 
+            O aluno realizou um desafio sobre o tema: ${topic}.
+            Suas respostas foram: ${userAnswers}.
+            O gabarito correto e explicações são: ${correctAnswers}.
+            
+            Com base nos erros e acertos, sugira uma TRILHA DE APRENDIZAGEM personalizada para recuperação.
+            A trilha deve:
+            1. Identificar a lacuna de conhecimento (ex: "Você parece ter dificuldade em entender a permeabilidade seletiva").
+            2. Sugerir um tópico de revisão fundamental (ex: "Revise a estrutura da Membrana Plasmática antes de voltar para Osmose").
+            3. Propor uma atividade prática ou analogia para fixação.
+            4. Ser motivadora e direta.
+            
+            Use Markdown e emojis biológicos.`,
+            config: { 
+              systemInstruction: getSystemInstruction(settings),
+              tools: [{ urlContext: {} }]
+            }
+        }));
+        return cleanText(response);
+    } catch (error) { return "Erro ao gerar trilha de aprendizagem."; }
 };
 
 export const generateSimulationMission = async (topic: string, settings: TeacherSettings): Promise<any> => {
