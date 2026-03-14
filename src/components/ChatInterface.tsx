@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { Message, ResponseMode, TeacherSettings, QuestionType } from '../types';
-import { streamMessageToGemini, streamQuestions, generateDeepDiveContent, generateSimulationMission } from '../services/geminiService';
+import { streamMessageToGemini, streamQuestions, generateDeepDiveContent, generateSimulationMission, generateLearningPath } from '../services/geminiService';
 import Mascot from './Mascot';
 import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap, Mic, MessageCircle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -23,7 +23,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
       return saved ? JSON.parse(saved) : [{
         id: 'intro',
         role: 'model',
-        text: `🧠 Olá, **${userName || 'Estudante'}**! Estou com meus circuitos biológicos carregados.\n\nComo você quer estudar hoje? Escolha um estilo abaixo ou me conte o que está estudando!`,
+        text: `Olá, **${userName || 'Estudante'}**! Eu sou o Telloo, sua Inteligência Biológica de alto desempenho. 🧬\n\nNo momento, estou operando com foco em **${settings.enemMode ? 'ENEM' : 'BNCC'}** para o **${settings.gradeLevel}**. ${settings.currentChapter ? `\n\nJá processei as diretrizes sobre **${settings.currentChapter}** e estou pronto para começarmos.` : ''}\n\nPodemos estruturar **Mapas Mentais**, enfrentar **Desafios** ou testar hipóteses no nosso laboratório **Bio-Sandbox**. O que vamos descobrir hoje?`,
         timestamp: Date.now()
       }];
     } catch (e) {
@@ -31,7 +31,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
       return [{
         id: 'intro',
         role: 'model',
-        text: `🧠 Olá, **${userName || 'Estudante'}**! Estou com meus circuitos biológicos carregados.\n\nComo você quer estudar hoje? Escolha um estilo abaixo ou me conte o que está estudando!`,
+        text: `Olá, **${userName || 'Estudante'}**! Eu sou o Telloo, sua Inteligência Biológica de alto desempenho. 🧬\n\nNo momento, estou operando com foco em **${settings.enemMode ? 'ENEM' : 'BNCC'}** para o **${settings.gradeLevel}**. ${settings.currentChapter ? `\n\nJá processei as diretrizes sobre **${settings.currentChapter}** e estou pronto para começarmos.` : ''}\n\nPodemos estruturar **Mapas Mentais**, enfrentar **Desafios** ou testar hipóteses no nosso laboratório **Bio-Sandbox**. O que vamos descobrir hoje?`,
         timestamp: Date.now()
       }];
     }
@@ -650,7 +650,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     }
   };
 
-  const handleOpenSimulation = () => {
+  const handleOpenSimulation = async () => {
     setIsSimulationMode(true);
     setIsDrawerOpen(true);
     
@@ -659,8 +659,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     
     if (!activeMission) {
         // Se não houver missão ativa (porque resetamos no handleSend ou é a primeira vez),
-        // pegamos uma nova baseada no tópico atual
-        setActiveMission(getSimulationMission());
+        // geramos uma nova baseada no tópico atual usando IA
+        await handleSortearMissao();
     }
   };
 
@@ -915,6 +915,26 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     setIsAssessmentModalOpen(true);
   };
 
+  const handleGenerateLearningPath = async (msgId: string, topic: string, correctAnswers: string) => {
+    const selections = userSelections[msgId] || {};
+    const answersStr = Object.entries(selections)
+        .map(([idx, letter]) => `Questão ${parseInt(idx) + 1}: ${letter}`)
+        .join(', ') || "Nenhuma resposta selecionada";
+
+    setIsSimulationMode(false);
+    setIsDrawerOpen(true);
+    setIsDrawerLoading(true);
+    
+    try {
+        const path = await generateLearningPath(topic, answersStr, correctAnswers, settings);
+        setDrawerContent(path);
+    } catch (err) {
+        setDrawerContent("Erro ao gerar sua trilha de recuperação. Tente novamente.");
+    } finally {
+        setIsDrawerLoading(false);
+    }
+  };
+
   const startAssessmentGeneration = async () => {
     setIsAssessmentModalOpen(false);
     setIsLoading(true);
@@ -1063,9 +1083,9 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     };
 
     return {
-      h1: (props: any) => <h1 className="text-[21px] sm:text-[25px] font-display font-bold text-telloo-neonGreen mt-6 mb-4 border-b border-telloo-neonGreen/20 pb-2 print:text-black print:border-black" {...props} />,
-      h2: (props: any) => <h2 className="text-[19px] sm:text-[21px] font-semibold text-white mt-6 mb-3 print:text-black" {...props} />,
-      h3: (props: any) => <h3 className="text-[17px] sm:text-[19px] font-medium text-telloo-neonBlue mt-4 mb-2 print:text-black" {...props} />,
+      h1: (props: any) => <h1 className="text-[20px] sm:text-[22px] font-display font-bold text-telloo-neonGreen mt-6 mb-4 border-b border-telloo-neonGreen/20 pb-2 print:text-black print:border-black" {...props} />,
+      h2: (props: any) => <h2 className="text-[18px] sm:text-[20px] font-semibold text-white mt-6 mb-3 print:text-black" {...props} />,
+      h3: (props: any) => <h3 className="text-[16px] sm:text-[18px] font-medium text-telloo-neonBlue mt-4 mb-2 print:text-black" {...props} />,
       p: (props: any) => {
           const text = getCleanText(props.children);
           
@@ -1150,7 +1170,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
 
       return (
         <div id={`msg-${msg.id}`} key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in print:block print:mb-8 print:break-inside-avoid`}>
-            <div id={`msg-content-${msg.id}`} className={`relative group max-w-[95%] sm:max-w-[85%] p-5 sm:p-8 rounded-2xl border transition-all ${msg.role === 'user' ? 'bg-slate-800/80 backdrop-blur-md border-white/5' : 'bg-slate-900/40 backdrop-blur-xl border-telloo-neonGreen/5 shadow-2xl'} print:bg-white print:border-none print:p-0 print:max-w-full`}>
+            <div id={`msg-content-${msg.id}`} className={`relative group max-w-[95%] sm:max-w-[80%] p-4 sm:p-6 rounded-[24px] border transition-all ${msg.role === 'user' ? 'bg-telloo-neonBlue/10 border-telloo-neonBlue/20 rounded-tr-none' : 'bg-white/5 border-white/10 rounded-tl-none shadow-xl'} print:bg-white print:border-none print:p-0 print:max-w-full`}>
             
             {msg.role === 'model' && !msg.isStreaming && (
                 <div className="sticky top-24 float-right flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity print:hidden z-10 ml-4 mb-4">
@@ -1173,7 +1193,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
 
             {msg.role === 'model' && msg.mode && <div className="flex items-center gap-2 mb-4 text-[10px] font-bold uppercase tracking-widest text-telloo-neonBlue bg-telloo-neonBlue/10 w-fit px-2 py-0.5 rounded border border-telloo-neonBlue/20 print:hidden"><Zap size={10}/> {msg.mode}</div>}
 
-            <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed text-[15px] sm:text-[17px] markdown-container print:text-black print:prose-black">
+            <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed text-[15px] markdown-container print:text-black print:prose-black">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, questionContent)}>{questionContent}</ReactMarkdown>
             </div>
 
@@ -1195,9 +1215,19 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                     </button>
                     {(isAnswerRevealed || window.matchMedia('print').matches) && (
                         <div className="bg-telloo-neonGreen/5 border-l-4 border-telloo-neonGreen p-5 rounded-r-xl animate-fade-in print:bg-white print:border-black print:p-2">
-                            <div className="flex items-center gap-2 mb-3 text-telloo-neonGreen print:text-black">
-                                <ClipboardCheck size={18}/>
-                                <h4 className="text-[13px] font-bold uppercase tracking-widest">Resolução Comentada</h4>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2 text-telloo-neonGreen print:text-black">
+                                    <ClipboardCheck size={18}/>
+                                    <h4 className="text-[13px] font-bold uppercase tracking-widest">Resolução Comentada</h4>
+                                </div>
+                                {!window.matchMedia('print').matches && (
+                                    <button 
+                                        onClick={() => handleGenerateLearningPath(msg.id, currentTopic || 'Biologia', answerKey)}
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-telloo-neonBlue/20 border border-telloo-neonBlue/30 text-telloo-neonBlue text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-telloo-neonBlue/30 transition-all"
+                                    >
+                                        <MapPin size={12}/> Gerar Trilha de Recuperação
+                                    </button>
+                                )}
                             </div>
                             <div className="prose prose-invert max-w-none text-[13px] sm:text-[15px] text-gray-300 print:text-black">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, answerKey, 99)}>{answerKey}</ReactMarkdown>
@@ -1405,13 +1435,18 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
         </div>
       )}
 
-      <header className="p-4 border-b border-white/5 bg-slate-900/90 backdrop-blur-md flex justify-between items-center sticky top-0 z-20 shadow-lg print:hidden">
+      <header className="p-3 border-b border-white/5 bg-slate-900/80 backdrop-blur-xl flex justify-between items-center sticky top-0 z-20 shadow-lg print:hidden">
         <div className="flex items-center gap-3">
             <Mascot size="sm" animated={isLoading} />
             <div className="flex flex-col">
-                <h1 className="font-display font-bold text-telloo-neonGreen tracking-tighter leading-none">TELLOO</h1>
-                <div className="flex gap-2 items-center mt-1">
-                    <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-bold uppercase tracking-widest">{settings.gradeLevel}</span>
+                <h1 className="font-display font-bold text-telloo-neonGreen tracking-tighter leading-none text-[18px]">TELLOO</h1>
+                <div className="flex gap-2 items-center mt-0.5 max-w-[200px] sm:max-w-xs overflow-hidden">
+                    <span className="text-[8px] bg-telloo-neonBlue/10 px-1.5 py-0.5 rounded text-telloo-neonBlue font-bold uppercase tracking-widest truncate" title={currentTopic || 'Biologia'}>
+                        {currentTopic || 'Biologia'}
+                    </span>
+                    <span className="text-[8px] bg-white/5 px-1.5 py-0.5 rounded text-gray-500 font-bold uppercase tracking-widest whitespace-nowrap">
+                        ENEM/SAEB
+                    </span>
                 </div>
             </div>
         </div>
@@ -1437,8 +1472,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
         <div ref={messagesEndRef} />
       </main>
 
-      <footer className="p-4 bg-slate-900/90 backdrop-blur-md border-t border-white/5 fixed bottom-0 w-full z-20 shadow-[0_-10px_20px_rgba(0,0,0,0.5)] print:hidden">
-        <div className="max-w-4xl mx-auto space-y-4">
+      <footer className="p-4 bg-slate-900/80 backdrop-blur-xl border-t border-white/5 fixed bottom-0 w-full z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.3)] print:hidden">
+        <div className="max-w-4xl mx-auto space-y-3">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 {[
                     { mode: ResponseMode.MIND_MAP, icon: Brain, color: 'text-purple-400', border: 'border-purple-500/20', bg: 'bg-purple-500/5' },
@@ -1447,25 +1482,27 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                     { mode: ResponseMode.LINGUISTIC, icon: BookOpen, color: 'text-cyan-400', border: 'border-cyan-500/20', bg: 'bg-cyan-500/5' },
                     { mode: ResponseMode.BNCC, icon: GraduationCap, color: 'text-emerald-400', border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' }
                 ].map((item) => (
-                    <button key={item.mode} onClick={() => handleModeSelect(item.mode)} className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${selectedMode === item.mode ? `${item.bg} ${item.color} ${item.border}` : 'bg-transparent text-gray-500 border-transparent hover:text-gray-400'}`}><item.icon size={12}/>{item.mode}</button>
+                    <button key={item.mode} onClick={() => handleModeSelect(item.mode)} className={`flex items-center gap-2 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${selectedMode === item.mode ? `${item.bg} ${item.color} ${item.border}` : 'bg-transparent text-gray-500 border-transparent hover:text-gray-400'}`}><item.icon size={12}/>{item.mode}</button>
                 ))}
             </div>
-            <div className="flex items-center gap-3 relative">
+            <div className="flex items-center gap-2 relative">
                 {isLoading && (
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-telloo-neonGreen px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border border-telloo-neonGreen/20 shadow-2xl flex items-center gap-3 whitespace-nowrap animate-fade-in">
-                    <Loader2 size={12} className="animate-spin" />
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-telloo-neonGreen px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-telloo-neonGreen/20 shadow-2xl flex items-center gap-2 whitespace-nowrap animate-fade-in">
+                    <Loader2 size={10} className="animate-spin" />
                     <span className="animate-pulse">{thinkingPhrases[thinkingIndex]}</span>
                   </div>
                 )}
-                <input ref={inputRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={isListening ? "Pode falar, estou ouvindo... 🎙️" : "O que vamos aprender hoje?"} className="flex-1 bg-black/20 backdrop-blur-sm border border-white/5 rounded-2xl p-4 focus:border-telloo-neonGreen/50 outline-none text-[15px] shadow-inner transition-all" />
-                <button 
-                   onClick={toggleListening} 
-                   className={`p-3 rounded-2xl transition-all border ${isListening ? 'bg-red-500/10 border-red-500/50 text-red-500 animate-pulse' : 'bg-white/5 border-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
-                   title={isListening ? "Telloo está ouvindo... 🎙️" : "Falar com o Telloo"}
-                 >
-                   <Mic size={18} />
-                 </button>
-                 <button onClick={() => handleSend()} disabled={!inputText.trim() || isLoading} className="p-3 bg-telloo-neonGreen text-black rounded-2xl hover:scale-105 active:scale-95 transition-all shadow-[0_0_15px_rgba(0,255,157,0.2)]"><Send size={18}/></button>
+                <div className="flex-1 flex items-center bg-white/5 border border-white/10 rounded-[24px] px-4 py-1 focus-within:border-telloo-neonGreen/50 transition-all shadow-inner">
+                    <input ref={inputRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={isListening ? "Ouvindo... 🎙️" : "Mensagem..."} className="flex-1 bg-transparent py-3 outline-none text-[15px] placeholder:text-gray-500" />
+                    <button 
+                       onClick={toggleListening} 
+                       className={`p-2 rounded-full transition-all ${isListening ? 'text-red-500 animate-pulse' : 'text-gray-400 hover:text-white'}`}
+                       title={isListening ? "Ouvindo... 🎙️" : "Voz"}
+                     >
+                       <Mic size={20} />
+                     </button>
+                </div>
+                 <button onClick={() => handleSend()} disabled={!inputText.trim() || isLoading} className="p-3 bg-telloo-neonGreen text-black rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg shadow-telloo-neonGreen/20"><Send size={20}/></button>
             </div>
         </div>
       </footer>
