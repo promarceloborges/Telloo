@@ -285,6 +285,7 @@ export const generateSimulationMission = async (topic: string, settings: Teacher
             Retorne um JSON com:
             {
               "title": "Título curto",
+              "context": "Explicação detalhada do quadro e situação biológica (Briefing da Expedição)",
               "problem": "Descrição do problema biológico",
               "hypothesis": "Hipótese científica",
               "objective": "O que o aluno deve alcançar",
