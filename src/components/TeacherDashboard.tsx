@@ -84,7 +84,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
             className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-slate-900 z-[70] shadow-2xl border-l border-white/10 flex flex-col"
           >
             <div className="p-6 border-b border-white/10 flex justify-between items-center">
-              <h2 className="text-xl font-bold text-telloo-neonGreen flex items-center gap-2">
+              <h2 className="text-[21px] font-bold text-telloo-neonGreen flex items-center gap-2">
                 <GraduationCap /> CONFIGURAÇÕES DO TUTOR
               </h2>
               <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/5 rounded-full transition-colors">
@@ -94,7 +94,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
 
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
               <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <label className="text-[13px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                   <Book size={14} /> Nível de Ensino
                 </label>
                 <select
@@ -113,7 +113,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
               </div>
 
               <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <label className="text-[13px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                   <Target size={14} /> Foco de Estudo
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -121,21 +121,21 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
                     onClick={() => handleChange('bnccFocus', !settings.bnccFocus)}
                     className={`p-4 rounded-xl border transition-all text-left ${settings.bnccFocus ? 'bg-telloo-neonGreen/10 border-telloo-neonGreen text-telloo-neonGreen' : 'bg-slate-800 border-white/10 text-gray-400'}`}
                   >
-                    <div className="font-bold text-xs uppercase mb-1">BNCC</div>
-                    <div className="text-[10px] opacity-70">Alinhado à Base Nacional</div>
+                    <div className="font-bold text-[13px] uppercase mb-1">BNCC</div>
+                    <div className="text-[11px] opacity-70">Alinhado à Base Nacional</div>
                   </button>
                   <button
                     onClick={() => handleChange('enemMode', !settings.enemMode)}
                     className={`p-4 rounded-xl border transition-all text-left ${settings.enemMode ? 'bg-telloo-neonBlue/10 border-telloo-neonBlue text-telloo-neonBlue' : 'bg-slate-800 border-white/10 text-gray-400'}`}
                   >
-                    <div className="font-bold text-xs uppercase mb-1">ENEM</div>
-                    <div className="text-[10px] opacity-70">Foco em Vestibulares</div>
+                    <div className="font-bold text-[13px] uppercase mb-1">ENEM</div>
+                    <div className="text-[11px] opacity-70">Foco em Vestibulares</div>
                   </button>
                 </div>
               </div>
 
               <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <label className="text-[13px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                   <FileText size={14} /> Tópico Atual / Capítulo
                 </label>
                 <input
@@ -148,7 +148,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
               </div>
 
               <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <label className="text-[13px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                   <Save size={14} /> Palavras-Chave
                 </label>
                 <textarea
@@ -160,7 +160,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
               </div>
 
               <div className="space-y-4">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                <label className="text-[13px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                   <FileText size={14} /> Material de Apoio (Texto/PDF/DOCX)
                 </label>
                 <div className="relative">
@@ -182,7 +182,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
                       ) : (
                         <FileText className="mx-auto mb-2 text-gray-500 group-hover:text-telloo-neonGreen transition-colors" />
                       )}
-                      <span className="text-xs font-bold text-gray-400 group-hover:text-white">
+                      <span className="text-[13px] font-bold text-gray-400 group-hover:text-white">
                         {isUploading ? 'Lendo arquivo...' : (settings.pdfName || 'Clique para anexar material')}
                       </span>
                     </div>

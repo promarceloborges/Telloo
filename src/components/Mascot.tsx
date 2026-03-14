@@ -28,7 +28,7 @@ const Mascot: React.FC<Props> = ({ size = 'md', animated = false }) => {
         }}
         className="w-full h-full bg-telloo-neonGreen rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(0,255,157,0.4)]"
       >
-        <span className="text-black font-bold text-xl">T</span>
+        <span className="text-black font-bold text-[21px]">T</span>
       </motion.div>
       {animated && (
         <motion.div

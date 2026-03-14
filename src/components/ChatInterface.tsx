@@ -407,16 +407,21 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
+                scrollX: 0,
+                scrollY: 0,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.getElementById(`msg-content-${msgId}`);
                     if (el) {
                         // Estilo de Folha Limpa
                         el.style.backgroundColor = '#ffffff';
                         el.style.color = '#1a1a1a';
-                        el.style.padding = '50px';
+                        el.style.padding = '60px 60px 80px 60px'; // Aumentado o padding inferior
                         el.style.borderRadius = '0';
                         el.style.border = 'none';
                         el.style.boxShadow = 'none';
+                        el.style.height = 'auto';
+                        el.style.minHeight = 'auto';
+                        el.style.overflow = 'visible';
 
                         // Ajustar todo o texto para preto/cinza escuro
                         const textElements = el.querySelectorAll('p, span, li, div, h1, h2, h3, strong');
@@ -430,6 +435,15 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                         el.querySelectorAll('h1, h2, h3').forEach((h: any) => {
                             h.style.color = '#064e3b';
                             h.style.borderBottom = '1px solid #eee';
+                        });
+
+                        // Ajustar imagens para garantir que não sejam cortadas
+                        el.querySelectorAll('img').forEach((img: any) => {
+                            img.style.display = 'block';
+                            img.style.maxWidth = '100%';
+                            img.style.height = 'auto';
+                            img.style.margin = '20px auto';
+                            img.style.borderRadius = '12px';
                         });
 
                         // Ajustar SVGs para fundo branco
@@ -478,6 +492,18 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                             </div>
                         `;
                         el.prepend(header);
+
+                        // Adicionar rodapé
+                        const footer = clonedDoc.createElement('div');
+                        footer.style.marginTop = '40px';
+                        footer.style.paddingTop = '10px';
+                        footer.style.borderTop = '1px solid #eee';
+                        footer.style.textAlign = 'center';
+                        footer.style.fontSize = '9px';
+                        footer.style.color = '#999';
+                        footer.style.fontFamily = 'sans-serif';
+                        footer.innerHTML = `Telloo • Inteligência Biológica • ${new Date().toLocaleString('pt-BR')}`;
+                        el.appendChild(footer);
                     }
                 }
             });
@@ -549,7 +575,12 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     link.click();
   };
 
-    const handleSend = async (text?: string, mode?: ResponseMode, isSilent = false) => {
+  const exportDrawerContent = async (format: 'txt' | 'doc' | 'pdf' | 'whatsapp') => {
+    if (!drawerContent) return;
+    await exportSingleBlock(drawerContent, format, 'drawer');
+  };
+
+  const handleSend = async (text?: string, mode?: ResponseMode, isSilent = false) => {
     const textToSend = text || inputText;
     if (!textToSend.trim()) return;
 
@@ -660,13 +691,17 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
+                scrollX: 0,
+                scrollY: 0,
                 onclone: (clonedDoc) => {
                     const el = clonedDoc.querySelector('main');
                     if (el) {
                         // Estilo de Relatório Limpo
                         el.style.backgroundColor = '#ffffff';
                         el.style.color = '#1a1a1a';
-                        el.style.padding = '60px';
+                        el.style.padding = '60px 60px 100px 60px'; // Aumentado o padding inferior
+                        el.style.height = 'auto';
+                        el.style.overflow = 'visible';
                         
                         // Ajustar todas as mensagens no relatório
                         const messages = el.querySelectorAll('[id^="msg-content-"]');
@@ -678,6 +713,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                             msg.style.marginBottom = '30px';
                             msg.style.padding = '20px 0';
                             msg.style.boxShadow = 'none';
+                            msg.style.height = 'auto';
+                            msg.style.overflow = 'visible';
                             
                             // Ajustar textos internos
                             msg.querySelectorAll('p, span, li, h1, h2, h3, strong').forEach((node: any) => {
@@ -690,6 +727,15 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                                 h.style.color = '#064e3b';
                             });
 
+                            // Ajustar imagens
+                            msg.querySelectorAll('img').forEach((img: any) => {
+                                img.style.display = 'block';
+                                img.style.maxWidth = '100%';
+                                img.style.height = 'auto';
+                                img.style.margin = '20px auto';
+                                img.style.borderRadius = '12px';
+                            });
+
                             // SVGs
                             msg.querySelectorAll('svg').forEach((svg: any) => {
                                 svg.style.display = 'block';
@@ -697,6 +743,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                                 svg.style.backgroundColor = '#fcfcfc';
                                 svg.style.border = '1px solid #eee';
                                 svg.style.padding = '15px';
+                                svg.style.borderRadius = '12px';
                                 
                                 svg.querySelectorAll('text, path, circle, rect, line').forEach((p: any) => {
                                     const stroke = p.getAttribute('stroke');
@@ -734,6 +781,18 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                             </div>
                         `;
                         el.prepend(header);
+
+                        // Adicionar rodapé completo
+                        const footer = clonedDoc.createElement('div');
+                        footer.style.marginTop = '50px';
+                        footer.style.paddingTop = '15px';
+                        footer.style.borderTop = '1px solid #eee';
+                        footer.style.textAlign = 'center';
+                        footer.style.fontSize = '10px';
+                        footer.style.color = '#999';
+                        footer.style.fontFamily = 'sans-serif';
+                        footer.innerHTML = `Telloo • Inteligência Biológica • ${new Date().toLocaleString('pt-BR')}`;
+                        el.appendChild(footer);
                     }
                 }
             });
@@ -995,18 +1054,18 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
         const isSelected = userSelections[msgId]?.[qIdx] === normalizedLetter;
         return (
             <div key={`${letter}-${qIdx}`} onClick={() => selectOption(msgId, qIdx, normalizedLetter)} className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer group/opt mb-2 ${isSelected ? 'bg-telloo-neonBlue/20 border-telloo-neonBlue shadow-[0_0_15px_rgba(0,240,255,0.2)]' : 'bg-white/5 border-white/10 hover:border-white/30'}`}>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all font-bold text-[10px] uppercase ${isSelected ? 'bg-telloo-neonBlue border-telloo-neonBlue text-black' : 'border-white/30 text-gray-400 group-hover/opt:border-telloo-neonBlue/50'}`}>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all font-bold text-[11px] uppercase ${isSelected ? 'bg-telloo-neonBlue border-telloo-neonBlue text-black' : 'border-white/30 text-gray-400 group-hover/opt:border-telloo-neonBlue/50'}`}>
                     {letter}
                 </div>
-                <p className={`text-sm leading-relaxed ${isSelected ? 'text-white' : 'text-gray-300'}`}>{content}</p>
+                <p className={`text-[15px] leading-relaxed ${isSelected ? 'text-white' : 'text-gray-300'}`}>{content}</p>
             </div>
         );
     };
 
     return {
-      h1: (props: any) => <h1 className="text-xl sm:text-2xl font-display font-bold text-telloo-neonGreen mt-6 mb-4 border-b border-telloo-neonGreen/20 pb-2 print:text-black print:border-black" {...props} />,
-      h2: (props: any) => <h2 className="text-lg sm:text-xl font-semibold text-white mt-6 mb-3 print:text-black" {...props} />,
-      h3: (props: any) => <h3 className="text-base sm:text-lg font-medium text-telloo-neonBlue mt-4 mb-2 print:text-black" {...props} />,
+      h1: (props: any) => <h1 className="text-[21px] sm:text-[25px] font-display font-bold text-telloo-neonGreen mt-6 mb-4 border-b border-telloo-neonGreen/20 pb-2 print:text-black print:border-black" {...props} />,
+      h2: (props: any) => <h2 className="text-[19px] sm:text-[21px] font-semibold text-white mt-6 mb-3 print:text-black" {...props} />,
+      h3: (props: any) => <h3 className="text-[17px] sm:text-[19px] font-medium text-telloo-neonBlue mt-4 mb-2 print:text-black" {...props} />,
       p: (props: any) => {
           const text = getCleanText(props.children);
           
@@ -1046,7 +1105,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
         if (!inline && content.trim().startsWith('<svg')) {
           return (
             <div className="my-6 p-4 bg-black/40 rounded-2xl border border-telloo-neonGreen/20 shadow-[0_0_15px_rgba(0,255,157,0.1)] overflow-hidden print:bg-white print:border-black print:shadow-none">
-              <div className="text-[9px] text-telloo-neonGreen/50 uppercase tracking-[0.2em] font-bold mb-3 flex items-center justify-between print:text-black print:border-b print:mb-2">
+              <div className="text-[10px] text-telloo-neonGreen/50 uppercase tracking-[0.2em] font-bold mb-3 flex items-center justify-between print:text-black print:border-b print:mb-2">
                   <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 bg-telloo-neonGreen rounded-full animate-pulse print:hidden"></div>
                       Diagrama Biológico
@@ -1056,7 +1115,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             </div>
           );
         }
-        return <code className={`${className} bg-slate-800 px-1.5 py-0.5 rounded text-telloo-neonBlue text-xs font-mono`} {...props}>{children}</code>;
+        return <code className={`${className} bg-slate-800 px-1.5 py-0.5 rounded text-telloo-neonBlue text-[13px] font-mono`} {...props}>{children}</code>;
       },
       svg: ({node, children, ...props}: any) => {
           const { inline, ...cleanProps } = props;
@@ -1069,7 +1128,14 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                   </div>
               </div>
           )
-      }
+      },
+      img: (props: any) => (
+        <img 
+          {...props} 
+          referrerPolicy="no-referrer" 
+          className="max-w-full h-auto rounded-2xl my-6 border border-white/10 shadow-lg print:border-black print:shadow-none block mx-auto" 
+        />
+      )
     };
   };
 
@@ -1096,24 +1162,24 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                             <Share2 size={14}/>
                         </button>
                         <div className="absolute right-0 top-full mt-1 hidden group-hover/exp:block bg-slate-800 border border-white/10 rounded-lg shadow-xl overflow-hidden z-30">
-                            <button onClick={() => exportSingleBlock(msg.text, 'txt')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.TXT</button>
-                            <button onClick={() => exportSingleBlock(msg.text, 'doc')} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.DOCX</button>
-                            <button onClick={() => exportSingleBlock(msg.text, 'pdf', msg.id)} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 border-b border-white/5">.PDF</button>
-                            <button onClick={() => exportSingleBlock(msg.text, 'whatsapp', msg.id)} className="w-full px-3 py-1.5 text-[9px] font-bold text-left hover:bg-white/5 text-green-400">WHATSAPP</button>
+                            <button onClick={() => exportSingleBlock(msg.text, 'txt')} className="w-full px-3 py-1.5 text-[10px] font-bold text-left hover:bg-white/5 border-b border-white/5">.TXT</button>
+                            <button onClick={() => exportSingleBlock(msg.text, 'doc')} className="w-full px-3 py-1.5 text-[10px] font-bold text-left hover:bg-white/5 border-b border-white/5">.DOCX</button>
+                            <button onClick={() => exportSingleBlock(msg.text, 'pdf', msg.id)} className="w-full px-3 py-1.5 text-[10px] font-bold text-left hover:bg-white/5 border-b border-white/5">.PDF</button>
+                            <button onClick={() => exportSingleBlock(msg.text, 'whatsapp', msg.id)} className="w-full px-3 py-1.5 text-[10px] font-bold text-left hover:bg-white/5 text-green-400">WHATSAPP</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {msg.role === 'model' && msg.mode && <div className="flex items-center gap-2 mb-4 text-[9px] font-bold uppercase tracking-widest text-telloo-neonBlue bg-telloo-neonBlue/10 w-fit px-2 py-0.5 rounded border border-telloo-neonBlue/20 print:hidden"><Zap size={10}/> {msg.mode}</div>}
+            {msg.role === 'model' && msg.mode && <div className="flex items-center gap-2 mb-4 text-[10px] font-bold uppercase tracking-widest text-telloo-neonBlue bg-telloo-neonBlue/10 w-fit px-2 py-0.5 rounded border border-telloo-neonBlue/20 print:hidden"><Zap size={10}/> {msg.mode}</div>}
 
-            <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed text-sm sm:text-base markdown-container print:text-black print:prose-black">
+            <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed text-[15px] sm:text-[17px] markdown-container print:text-black print:prose-black">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, questionContent)}>{questionContent}</ReactMarkdown>
             </div>
 
             {hasError && isLast && msg.role === 'model' && (
               <div className="mt-4 flex flex-col items-center gap-3 p-4 bg-red-500/10 border border-red-500/20 rounded-xl">
-                  <div className="flex items-center gap-2 text-red-400 text-xs font-bold uppercase tracking-widest">
+                  <div className="flex items-center gap-2 text-red-400 text-[13px] font-bold uppercase tracking-widest">
                       <AlertTriangle size={16}/> Falha de Sincronização
                   </div>
                   <button onClick={retryLastMessage} className="flex items-center gap-2 px-4 py-2 bg-white text-black text-[10px] font-bold uppercase tracking-widest rounded-lg hover:scale-105 transition-all">
@@ -1131,9 +1197,9 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                         <div className="bg-telloo-neonGreen/5 border-l-4 border-telloo-neonGreen p-5 rounded-r-xl animate-fade-in print:bg-white print:border-black print:p-2">
                             <div className="flex items-center gap-2 mb-3 text-telloo-neonGreen print:text-black">
                                 <ClipboardCheck size={18}/>
-                                <h4 className="text-xs font-bold uppercase tracking-widest">Resolução Comentada</h4>
+                                <h4 className="text-[13px] font-bold uppercase tracking-widest">Resolução Comentada</h4>
                             </div>
-                            <div className="prose prose-invert max-w-none text-xs sm:text-sm text-gray-300 print:text-black">
+                            <div className="prose prose-invert max-w-none text-[13px] sm:text-[15px] text-gray-300 print:text-black">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, answerKey, 99)}>{answerKey}</ReactMarkdown>
                             </div>
                         </div>
@@ -1143,14 +1209,14 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             
             {isLast && !msg.isStreaming && suggestions.length > 0 && (
                 <div className="mt-6 flex flex-wrap gap-2 print:hidden">
-                    {suggestions.map((s, idx) => (<button key={idx} onClick={() => handleSend(s)} className="px-4 py-2 bg-telloo-neonBlue/5 border border-telloo-neonBlue/20 text-telloo-neonBlue text-[11px] font-bold rounded-xl hover:bg-telloo-neonBlue/15 transition-all"><Sparkles size={12}/> {s}</button>))}
+                    {suggestions.map((s, idx) => (<button key={idx} onClick={() => handleSend(s)} className="px-4 py-2 bg-telloo-neonBlue/5 border border-telloo-neonBlue/20 text-telloo-neonBlue text-[12px] font-bold rounded-xl hover:bg-telloo-neonBlue/15 transition-all"><Sparkles size={12}/> {s}</button>))}
                 </div>
             )}
 
             {isLast && !msg.isStreaming && msg.role === 'model' && msg.id !== 'intro' && !hasError && (
                 <div className="mt-8 pt-6 border-t border-white/5 space-y-6 print:hidden">
                     <div className="bg-white/5 rounded-2xl p-4 border border-white/10 animate-fade-in">
-                        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-gray-400 mb-3 flex items-center gap-2">
                             <Sparkles size={12} className="text-telloo-neonGreen" /> Quer reforçar este aprendizado em outro estilo?
                         </p>
                         <div className="flex flex-wrap gap-2">
@@ -1164,7 +1230,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                                 <button 
                                     key={m.mode} 
                                     onClick={() => handleReExplain(m.mode)}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[9px] font-bold uppercase tracking-wider text-gray-300 hover:bg-white/10 hover:border-white/20 transition-all"
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-[10px] font-bold uppercase tracking-wider text-gray-300 hover:bg-white/10 hover:border-white/20 transition-all"
                                 >
                                     <m.icon size={12} className={m.color} /> {m.label}
                                 </button>
@@ -1173,10 +1239,10 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <button onClick={() => handleGenerateAssessment('Objetiva')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonGreen/10 border border-telloo-neonGreen/30 rounded-xl text-[9px] font-bold text-telloo-neonGreen uppercase tracking-widest hover:bg-telloo-neonGreen/20 transition-all"><Target size={14}/> Desafio</button>
-                        <button onClick={handleOpenDeepDive} className="flex items-center justify-center gap-2 p-3 bg-slate-800 border border-slate-700 rounded-xl text-[9px] font-bold text-gray-400 uppercase tracking-widest hover:bg-slate-700 transition-all"><Library size={14}/> Bio-Data</button>
-                        <button onClick={handleOpenSimulation} className="flex items-center justify-center gap-2 p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl text-[9px] font-bold text-purple-400 uppercase tracking-widest hover:bg-purple-500/20 transition-all"><Beaker size={14}/> Simular</button>
-                        <button onClick={() => handleGenerateAssessment('PROVA')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonBlue/10 border border-telloo-neonBlue/30 rounded-xl text-[9px] font-bold text-telloo-neonBlue uppercase tracking-widest hover:bg-telloo-neonBlue/20 transition-all"><FileText size={14}/> Prova</button>
+                        <button onClick={() => handleGenerateAssessment('Objetiva')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonGreen/10 border border-telloo-neonGreen/30 rounded-xl text-[10px] font-bold text-telloo-neonGreen uppercase tracking-widest hover:bg-telloo-neonGreen/20 transition-all"><Target size={14}/> Desafio</button>
+                        <button onClick={handleOpenDeepDive} className="flex items-center justify-center gap-2 p-3 bg-slate-800 border border-slate-700 rounded-xl text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:bg-slate-700 transition-all"><Library size={14}/> Bio-Data</button>
+                        <button onClick={handleOpenSimulation} className="flex items-center justify-center gap-2 p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl text-[10px] font-bold text-purple-400 uppercase tracking-widest hover:bg-purple-500/20 transition-all"><Beaker size={14}/> Simular</button>
+                        <button onClick={() => handleGenerateAssessment('PROVA')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonBlue/10 border border-telloo-neonBlue/30 rounded-xl text-[10px] font-bold text-telloo-neonBlue uppercase tracking-widest hover:bg-telloo-neonBlue/20 transition-all"><FileText size={14}/> Prova</button>
                     </div>
                 </div>
             )}
@@ -1190,23 +1256,38 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
     <div className="flex flex-col h-screen bg-[#020617] text-white overflow-hidden">
       <div className={`fixed inset-y-0 right-0 w-full sm:w-[500px] bg-slate-900 z-50 transform transition-transform border-l border-telloo-neonGreen/30 shadow-2xl ${isDrawerOpen ? 'translate-x-0' : 'translate-x-full'} print:hidden`}>
         <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
-            <h2 className="font-display font-bold text-lg flex items-center gap-2 text-telloo-neonGreen uppercase tracking-tighter">
+            <h2 className="font-display font-bold text-[19px] flex items-center gap-2 text-telloo-neonGreen uppercase tracking-tighter">
                 {isSimulationMode ? <><Beaker size={20}/> Bio-Sandbox</> : <><Library size={20}/> Bio-Data</>}
             </h2>
-            <button onClick={() => setIsDrawerOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X/></button>
+            <div className="flex items-center gap-2">
+                {!isSimulationMode && !isDrawerLoading && drawerContent && (
+                    <div className="relative group/drawer-exp">
+                        <button className="p-2 hover:bg-white/10 rounded-full transition-colors text-telloo-neonBlue">
+                            <Share2 size={20}/>
+                        </button>
+                        <div className="absolute right-0 top-full mt-1 hidden group-hover/drawer-exp:block bg-slate-800 border border-white/10 rounded-lg shadow-xl overflow-hidden z-[60] w-32">
+                            <button onClick={() => exportDrawerContent('txt')} className="w-full px-3 py-2 text-[11px] font-bold text-left hover:bg-white/5 border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .TXT</button>
+                            <button onClick={() => exportDrawerContent('doc')} className="w-full px-3 py-2 text-[11px] font-bold text-left hover:bg-white/5 border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .DOCX</button>
+                            <button onClick={() => exportDrawerContent('pdf')} className="w-full px-3 py-2 text-[11px] font-bold text-left hover:bg-white/5 border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .PDF</button>
+                            <button onClick={() => exportDrawerContent('whatsapp')} className="w-full px-3 py-2 text-[11px] font-bold text-left hover:bg-white/5 text-green-400 flex items-center gap-2"><MessageCircle size={12}/> WHATSAPP</button>
+                        </div>
+                    </div>
+                )}
+                <button onClick={() => setIsDrawerOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X/></button>
+            </div>
         </div>
         <div className="p-6 overflow-y-auto h-[calc(100%-80px)] custom-scrollbar">
             {isDrawerLoading || isMissionLoading ? (
                 <div className="flex flex-col items-center justify-center h-full gap-6">
                     <Loader2 size={48} className="text-telloo-neonGreen animate-spin" />
-                    <p className="text-xs text-telloo-neonGreen animate-pulse font-mono tracking-widest uppercase font-bold text-center">Processando...</p>
+                    <p className="text-[13px] text-telloo-neonGreen animate-pulse font-mono tracking-widest uppercase font-bold text-center">Processando...</p>
                 </div>
             ) : isSimulationMode ? (
                 <div className="space-y-6">
                     <div className="bg-slate-800/50 rounded-2xl p-5 border border-white/10 shadow-lg space-y-3">
                         <div className="flex items-center gap-2 text-telloo-neonBlue">
                             <Activity size={18}/>
-                            <h3 className="text-xs font-bold uppercase tracking-widest">{currentMission.title}</h3>
+                            <h3 className="text-[13px] font-bold uppercase tracking-widest">{currentMission.title}</h3>
                         </div>
                         <div className="space-y-2 text-[11px] leading-relaxed">
                             <p><strong className="text-telloo-neonGreen uppercase">Problema:</strong> {currentMission.problem}</p>
@@ -1227,24 +1308,24 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                         <div className="mt-6 space-y-4">
                             <div className="space-y-2">
                                 <div className="flex justify-between items-center px-1">
-                                    <label className="text-[10px] font-black uppercase text-gray-400 tracking-tighter">{currentMission.controlName}</label>
-                                    <span className="text-[10px] font-mono text-telloo-neonGreen">{simVariable} {currentMission.unit}</span>
+                                    <label className="text-[11px] font-black uppercase text-gray-400 tracking-tighter">{currentMission.controlName}</label>
+                                    <span className="text-[11px] font-mono text-telloo-neonGreen">{simVariable} {currentMission.unit}</span>
                                 </div>
                                 <input type="range" min="0" max="100" value={simVariable} onChange={(e) => setSimVariable(parseInt(e.target.value))} className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-telloo-neonGreen" />
                             </div>
-                            <button onClick={handleSortearMissao} disabled={isMissionLoading} className="w-full flex items-center justify-center gap-2 p-2 bg-white/5 text-[9px] font-bold text-gray-500 rounded-lg uppercase tracking-widest hover:text-white transition-colors disabled:opacity-50">
+                            <button onClick={handleSortearMissao} disabled={isMissionLoading} className="w-full flex items-center justify-center gap-2 p-2 bg-white/5 text-[10px] font-bold text-gray-500 rounded-lg uppercase tracking-widest hover:text-white transition-colors disabled:opacity-50">
                                 <RotateCcw size={12} className={isMissionLoading ? 'animate-spin' : ''}/> Sortear nova missão do tema
                             </button>
                         </div>
                     </div>
                     <div className="bg-slate-900 border-l-4 border-telloo-neonGreen rounded-r-2xl p-4 shadow-xl">
-                        <p className="text-[11px] text-gray-300 leading-relaxed min-h-[40px]">
+                        <p className="text-[12px] text-gray-300 leading-relaxed min-h-[40px]">
                             {currentMission.getLog(simVariable)}
                         </p>
                     </div>
                 </div>
             ) : (
-                <div className="prose prose-invert max-w-none custom-scrollbar">
+                <div id="msg-content-drawer" className="prose prose-invert max-w-none custom-scrollbar print:bg-white print:text-black print:p-8">
                     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents('drawer', drawerContent)}>{drawerContent}</ReactMarkdown>
                 </div>
             )}
@@ -1257,14 +1338,14 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
           <div className="bg-slate-900 border border-telloo-neonGreen/30 rounded-3xl p-6 w-full max-w-md shadow-2xl animate-fade-in">
             <div className="flex items-center gap-3 text-telloo-neonGreen mb-6">
               <Target size={24} />
-              <h2 className="text-xl font-bold uppercase tracking-tighter">Preparar {assessmentType}</h2>
+              <h2 className="text-[21px] font-bold uppercase tracking-tighter">Preparar {assessmentType}</h2>
             </div>
             
             <div className="space-y-4">
-              <p className="text-sm text-gray-400">Vou preparar sua avaliação. Confirme ou ajuste o tema abaixo:</p>
+              <p className="text-[15px] text-gray-400">Vou preparar sua avaliação. Confirme ou ajuste o tema abaixo:</p>
               
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase tracking-widest text-telloo-neonBlue">Tema do Conteúdo</label>
+                <label className="text-[11px] font-bold uppercase tracking-widest text-telloo-neonBlue">Tema do Conteúdo</label>
                 <input 
                   type="text" 
                   value={assessmentTopic} 
@@ -1277,13 +1358,13 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
               <div className="flex gap-3 pt-4">
                 <button 
                   onClick={() => setIsAssessmentModalOpen(false)}
-                  className="flex-1 p-4 bg-white/5 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                  className="flex-1 p-4 bg-white/5 border border-white/10 rounded-xl text-[13px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={startAssessmentGeneration}
-                  className="flex-1 p-4 bg-telloo-neonGreen text-black rounded-xl text-xs font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  className="flex-1 p-4 bg-telloo-neonGreen text-black rounded-xl text-[13px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
                   Confirmar
                 </button>
@@ -1299,22 +1380,22 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
           <div className="bg-slate-900 border border-red-500/30 rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-fade-in">
             <div className="flex items-center gap-3 text-red-400 mb-6">
               <Eraser size={24} />
-              <h2 className="text-xl font-bold uppercase tracking-tighter">Limpar Histórico?</h2>
+              <h2 className="text-[21px] font-bold uppercase tracking-tighter">Limpar Histórico?</h2>
             </div>
             
             <div className="space-y-6">
-              <p className="text-sm text-gray-400">Isso apagará todas as mensagens e o progresso atual. Esta ação não pode ser desfeita.</p>
+              <p className="text-[15px] text-gray-400">Isso apagará todas as mensagens e o progresso atual. Esta ação não pode ser desfeita.</p>
               
               <div className="flex gap-3">
                 <button 
                   onClick={() => setIsClearConfirmOpen(false)}
-                  className="flex-1 p-4 bg-white/5 border border-white/10 rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
+                  className="flex-1 p-4 bg-white/5 border border-white/10 rounded-xl text-[13px] font-bold uppercase tracking-widest hover:bg-white/10 transition-all"
                 >
                   Cancelar
                 </button>
                 <button 
                   onClick={confirmClearChat}
-                  className="flex-1 p-4 bg-red-500 text-white rounded-xl text-xs font-bold uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
+                  className="flex-1 p-4 bg-red-500 text-white rounded-xl text-[13px] font-bold uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-500/20"
                 >
                   Limpar
                 </button>
@@ -1330,7 +1411,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
             <div className="flex flex-col">
                 <h1 className="font-display font-bold text-telloo-neonGreen tracking-tighter leading-none">TELLOO</h1>
                 <div className="flex gap-2 items-center mt-1">
-                    <span className="text-[8px] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-bold uppercase tracking-widest">{settings.gradeLevel}</span>
+                    <span className="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-gray-400 font-bold uppercase tracking-widest">{settings.gradeLevel}</span>
                 </div>
             </div>
         </div>
@@ -1339,10 +1420,10 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                 <button onClick={() => setShowExportMenu(!showExportMenu)} className="p-2 text-gray-400 hover:text-telloo-neonGreen flex items-center gap-1" title="Exportar Estudo"><Download size={18}/></button>
                 {showExportMenu && (
                     <div className="absolute right-0 mt-2 w-32 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
-                        <button onClick={() => exportChat('txt')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .TXT</button>
-                        <button onClick={() => exportChat('docx')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .DOCX</button>
-                        <button onClick={() => exportChat('pdf')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .PDF</button>
-                        <button onClick={() => exportChat('whatsapp')} className="w-full px-4 py-2 text-left text-[10px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center gap-2 text-green-400"><MessageCircle size={12}/> WhatsApp</button>
+                        <button onClick={() => exportChat('txt')} className="w-full px-4 py-2 text-left text-[11px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .TXT</button>
+                        <button onClick={() => exportChat('docx')} className="w-full px-4 py-2 text-left text-[11px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .DOCX</button>
+                        <button onClick={() => exportChat('pdf')} className="w-full px-4 py-2 text-left text-[11px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .PDF</button>
+                        <button onClick={() => exportChat('whatsapp')} className="w-full px-4 py-2 text-left text-[11px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center gap-2 text-green-400"><MessageCircle size={12}/> WhatsApp</button>
                     </div>
                 )}
             </div>
@@ -1366,17 +1447,17 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings }) 
                     { mode: ResponseMode.LINGUISTIC, icon: BookOpen, color: 'text-cyan-400', border: 'border-cyan-500/20', bg: 'bg-cyan-500/5' },
                     { mode: ResponseMode.BNCC, icon: GraduationCap, color: 'text-emerald-400', border: 'border-emerald-500/20', bg: 'bg-emerald-500/5' }
                 ].map((item) => (
-                    <button key={item.mode} onClick={() => handleModeSelect(item.mode)} className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${selectedMode === item.mode ? `${item.bg} ${item.color} ${item.border}` : 'bg-transparent text-gray-500 border-transparent hover:text-gray-400'}`}><item.icon size={12}/>{item.mode}</button>
+                    <button key={item.mode} onClick={() => handleModeSelect(item.mode)} className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-[11px] font-bold uppercase tracking-wider transition-all border whitespace-nowrap ${selectedMode === item.mode ? `${item.bg} ${item.color} ${item.border}` : 'bg-transparent text-gray-500 border-transparent hover:text-gray-400'}`}><item.icon size={12}/>{item.mode}</button>
                 ))}
             </div>
             <div className="flex items-center gap-3 relative">
                 {isLoading && (
-                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-telloo-neonGreen px-5 py-2 rounded-full text-[10px] font-bold uppercase tracking-widest border border-telloo-neonGreen/20 shadow-2xl flex items-center gap-3 whitespace-nowrap animate-fade-in">
+                  <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-telloo-neonGreen px-5 py-2 rounded-full text-[11px] font-bold uppercase tracking-widest border border-telloo-neonGreen/20 shadow-2xl flex items-center gap-3 whitespace-nowrap animate-fade-in">
                     <Loader2 size={12} className="animate-spin" />
                     <span className="animate-pulse">{thinkingPhrases[thinkingIndex]}</span>
                   </div>
                 )}
-                <input ref={inputRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={isListening ? "Pode falar, estou ouvindo... 🎙️" : "O que vamos aprender hoje?"} className="flex-1 bg-black/20 backdrop-blur-sm border border-white/5 rounded-2xl p-4 focus:border-telloo-neonGreen/50 outline-none text-sm shadow-inner transition-all" />
+                <input ref={inputRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={isListening ? "Pode falar, estou ouvindo... 🎙️" : "O que vamos aprender hoje?"} className="flex-1 bg-black/20 backdrop-blur-sm border border-white/5 rounded-2xl p-4 focus:border-telloo-neonGreen/50 outline-none text-[15px] shadow-inner transition-all" />
                 <button 
                    onClick={toggleListening} 
                    className={`p-3 rounded-2xl transition-all border ${isListening ? 'bg-red-500/10 border-red-500/50 text-red-500 animate-pulse' : 'bg-white/5 border-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}

@@ -30,10 +30,10 @@ const LandingPage: React.FC<Props> = ({ onEnter }) => {
         </div>
         
         <div className="space-y-2">
-          <h1 className="text-5xl font-display font-bold text-telloo-neonGreen tracking-tighter">
+          <h1 className="text-[49px] font-display font-bold text-telloo-neonGreen tracking-tighter">
             TELLOO
           </h1>
-          <p className="text-gray-400 text-sm uppercase tracking-[0.3em] font-bold">
+          <p className="text-gray-400 text-[15px] uppercase tracking-[0.3em] font-bold">
             Seu Tutor de Biologia AI
           </p>
         </div>
@@ -59,7 +59,7 @@ const LandingPage: React.FC<Props> = ({ onEnter }) => {
           </button>
         </form>
 
-        <div className="flex items-center justify-center gap-2 text-telloo-neonBlue/60 text-[10px] font-bold uppercase tracking-widest">
+        <div className="flex items-center justify-center gap-2 text-telloo-neonBlue/60 text-[11px] font-bold uppercase tracking-widest">
           <Sparkles size={12} /> Alinhado à BNCC & ENEM
         </div>
       </motion.div>
