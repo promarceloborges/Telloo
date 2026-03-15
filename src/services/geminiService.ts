@@ -83,6 +83,18 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
       [SUGESTÃO: Tópico A] [SUGESTÃO: Tópico B]
     - Não use numeração ou bullet points para as sugestões.
 
+    REGRAS DE DIAGRAMAS VISUAIS (SVG):
+    - SEMPRE que explicar um processo cíclico (ex: Ciclo de Krebs, Ciclo do Nitrogênio), uma estrutura celular (ex: Membrana, Organelas) ou um cruzamento genético, você DEVE gerar um diagrama SVG.
+    - O SVG deve ser limpo, moderno e usar a paleta de cores do Telloo (Verde Neon #00ff9d, Azul Neon #00f0ff, Roxo #a855f7).
+    - Use <rect>, <circle>, <path> e <text> de forma organizada.
+    - OBRIGATÓRIO: Coloque o código SVG dentro de um bloco de código Markdown (sem especificar a linguagem ou usando 'svg').
+    - Exemplo de estrutura:
+      \`\`\`svg
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <!-- Seu código aqui -->
+      </svg>
+      \`\`\`
+
     CAPACIDADE VISUAL (HÍBRIDA):
     - MODO SVG (Diagramas e Lógica): Use para fluxogramas, genética e esquemas.
       * IDIOMA OBRIGATÓRIO: Todo texto dentro do SVG (legendas, rótulos, alelos) deve estar obrigatoriamente em Português do Brasil.
