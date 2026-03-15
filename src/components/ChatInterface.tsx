@@ -9,6 +9,8 @@ import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Librar
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
+import { BIO_GLOSSARY } from '../constants/glossary';
+import GlossaryTooltip from './GlossaryTooltip';
 
 interface Props {
   userName: string;
@@ -1067,6 +1069,50 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
     return '';
   };
 
+  const wrapWithGlossary = (text: string) => {
+    if (!text || typeof text !== 'string') return text;
+    
+    let parts: (string | React.ReactNode)[] = [text];
+    
+    BIO_GLOSSARY.forEach(item => {
+      const newParts: (string | React.ReactNode)[] = [];
+      const regex = new RegExp(`\\b(${item.term})\\b`, 'gi');
+      
+      parts.forEach(part => {
+        if (typeof part !== 'string') {
+          newParts.push(part);
+          return;
+        }
+        
+        const split = part.split(regex);
+        if (split.length <= 1) {
+          newParts.push(part);
+          return;
+        }
+        
+        split.forEach((subPart, i) => {
+          if (i % 2 === 1) {
+            newParts.push(
+              <GlossaryTooltip 
+                key={`${item.term}-${i}`} 
+                term={item.term} 
+                definition={item.definition} 
+                category={item.category}
+              >
+                {subPart}
+              </GlossaryTooltip>
+            );
+          } else if (subPart) {
+            newParts.push(subPart);
+          }
+        });
+      });
+      parts = newParts;
+    });
+    
+    return parts;
+  };
+
   const MarkdownComponents = (msgId: string, msgText: string, initialQIndex: number = 0) => {
     let internalQIndex = initialQIndex;
 
@@ -1105,7 +1151,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                   const content = line.replace(/^(\*\*|__)?[a-e][\)\s.-]\s?/i, '');
                   return renderOptionButton(letter, content, internalQIndex);
               }
-              return <span key={idx}>{line}<br/></span>;
+              return <span key={idx}>{wrapWithGlossary(line)}<br/></span>;
           });
 
           return <div className="mb-4 leading-relaxed last:mb-0 print:text-black">{processedLines}</div>;
@@ -1119,8 +1165,10 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
               const content = text.replace(/^(\*\*|__)?[a-e][\)\s.-]\s?/i, '');
               return renderOptionButton(letter, content, internalQIndex);
           }
-          return <li className="mb-1" {...props} />;
+          return <li className="mb-1">{wrapWithGlossary(text)}</li>;
       },
+      strong: (props: any) => <strong className="text-telloo-neonGreen font-bold">{wrapWithGlossary(getCleanText(props.children))}</strong>,
+      em: (props: any) => <em className="text-telloo-neonBlue italic">{wrapWithGlossary(getCleanText(props.children))}</em>,
       code: ({ node, inline, className, children, ...props }: any) => {
         const content = String(children);
         if (!inline && content.trim().startsWith('<svg')) {

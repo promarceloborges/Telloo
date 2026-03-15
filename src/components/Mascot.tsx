@@ -43,40 +43,79 @@ const Mascot: React.FC<Props> = ({ size = 'md', animated = false }) => {
             </filter>
           </defs>
           
-          {/* Hexágono Tecnológico */}
-          <path 
-            d="M50 5 L90 27.5 L90 72.5 L50 95 L10 72.5 L10 27.5 Z" 
+          {/* Ocular do Microscópio (Moldura Circular) */}
+          <circle 
+            cx="50" cy="50" r="45" 
             fill="none" 
             stroke="url(#logoGradient)" 
-            strokeWidth="2"
+            strokeWidth="1" 
             className="opacity-20"
           />
           
-          {/* Hélice de DNA Estilizada formando um 'T' e um Livro */}
+          {/* Escala Micrométrica (Traços na borda) */}
+          {[...Array(12)].map((_, i) => (
+            <line
+              key={i}
+              x1="50" y1="6" x2="50" y2="10"
+              stroke="url(#logoGradient)"
+              strokeWidth="1"
+              className="opacity-40"
+              transform={`rotate(${i * 30} 50 50)`}
+            />
+          ))}
+
+          {/* Dupla Hélice de DNA (Foco Central) */}
           <motion.path
-            d="M35 30 C35 30 45 45 50 45 C55 45 65 30 65 30 M50 45 L50 75 M30 75 L70 75"
+            d="M38 30 C38 30 62 45 62 55 C62 65 38 80 38 80"
             fill="none"
-            stroke="#00ff9d"
+            stroke="url(#logoGradient)"
             strokeWidth="4"
             strokeLinecap="round"
-            animate={animated ? { strokeDashoffset: [0, 10, 0] } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
+            animate={animated ? { 
+              strokeWidth: [4, 5, 4],
+              filter: ["brightness(1)", "brightness(1.3)", "brightness(1)"]
+            } : {}}
+            transition={{ duration: 3, repeat: Infinity }}
           />
-          
-          {/* Elementos de Conexão (Sinapses/Tecnologia) */}
-          <circle cx="35" cy="30" r="3" fill="#00f0ff" filter="url(#glow)" />
-          <circle cx="65" cy="30" r="3" fill="#00f0ff" filter="url(#glow)" />
-          <circle cx="50" cy="45" r="4" fill="#00ff9d" filter="url(#glow)" />
-          <circle cx="50" cy="75" r="3" fill="#00f0ff" filter="url(#glow)" />
-          
-          {/* Base do Livro / Conhecimento */}
+          <motion.path
+            d="M62 30 C62 30 38 45 38 55 C38 65 62 80 62 80"
+            fill="none"
+            stroke="url(#logoGradient)"
+            strokeWidth="4"
+            strokeLinecap="round"
+            animate={animated ? { 
+              strokeWidth: [4, 5, 4],
+              filter: ["brightness(1)", "brightness(1.3)", "brightness(1)"]
+            } : {}}
+            transition={{ duration: 3, repeat: Infinity, delay: 1.5 }}
+          />
+
+          {/* Barra Superior do 'T' (Iluminação de Foco) */}
           <path 
-            d="M30 75 L50 82 L70 75" 
+            d="M32 30 L68 30" 
+            fill="none" 
+            stroke="#00ff9d" 
+            strokeWidth="7" 
+            strokeLinecap="round"
+            filter="url(#glow)"
+          />
+
+          {/* Eixo de Observação */}
+          <line x1="50" y1="30" x2="50" y2="85" stroke="#00f0ff" strokeWidth="2" strokeDasharray="2 2" className="opacity-30" />
+
+          {/* Nodos de Dados Genéticos */}
+          <circle cx="38" cy="30" r="3" fill="#00ff9d" filter="url(#glow)" />
+          <circle cx="62" cy="30" r="3" fill="#00ff9d" filter="url(#glow)" />
+          <circle cx="50" cy="55" r="4" fill="#00f0ff" filter="url(#glow)" />
+          
+          {/* Lâmina de Microscopia (Base) */}
+          <path 
+            d="M35 85 L65 85 M40 90 L60 90" 
             fill="none" 
             stroke="#00f0ff" 
             strokeWidth="2" 
-            strokeLinecap="round" 
-            className="opacity-60"
+            strokeLinecap="round"
+            className="opacity-50"
           />
         </svg>
       </motion.div>
