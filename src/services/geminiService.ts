@@ -63,7 +63,13 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
       c) Opção
       d) Opção
     - Você DEVE separar a pergunta do gabarito usando EXATAMENTE o delimitador: ---GABARITO---
-    - Após o delimitador, forneça a resposta correta e uma breve justificativa.
+    - Após o delimitador, forneça a resposta correta e o feedback adaptativo para cada alternativa no formato:
+      Resposta: [letra]
+      Feedback:
+      a) [Por que a está correta ou incorreta]
+      b) [Por que b está correta ou incorreta]
+      c) [Por que c está correta ou incorreta]
+      d) [Por que d está correta ou incorreta]
 
     DICA CULTURAL (CINE-BIO):
     - Logo após a explicação técnica e ANTES da pergunta de verificação, você DEVE incluir uma seção chamada "### 🎬 Cine-Bio".
@@ -77,6 +83,15 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
       ...
     - NUNCA mostre a resposta logo após as alternativas.
     - Você DEVE separar o corpo da questão da explicação/resposta usando EXATAMENTE o delimitador: ---GABARITO---
+    - Após o delimitador, forneça a resposta correta e o feedback adaptativo para cada alternativa no formato:
+      Resposta: [letra]
+      Feedback:
+      a) [Por que a está correta ou incorreta]
+      b) [Por que b está correta ou incorreta]
+      c) [Por que c está correta ou incorreta]
+      d) [Por que d está correta ou incorreta]
+      ...
+      Justificativa: [Explicação geral da questão]
 
     SUGESTÕES DINÂMICAS (OBRIGATÓRIO):
     - Ao final de TODA resposta (após a pergunta de verificação e o gabarito), sugira 2 ou 3 tópicos curtos de continuação EXATAMENTE neste formato:
