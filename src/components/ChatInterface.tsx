@@ -1194,19 +1194,31 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
             else internalQIndex++;
           }
 
-          const lines = text.split(/\n/).filter(line => line.trim().length > 0);
-          const processedLines = lines.map((line, idx) => {
-              const altMatch = line.trim().match(/^(\*\*|__)?[a-e][\)\s.-]\s?(.*)/i);
-              if (altMatch) {
-                  const letterMatch = line.match(/[a-e]/i);
-                  const letter = letterMatch ? letterMatch[0] : 'a';
-                  const content = line.replace(/^(\*\*|__)?[a-e][\)\s.-]\s?/i, '');
-                  return renderOptionButton(letter, content, internalQIndex);
-              }
-              return <span key={idx}>{wrapWithGlossary(line)}<br/></span>;
-          });
+          // Se for uma opção de múltipla escolha, mantemos o processamento de linha por linha
+          if (text.trim().match(/^(\*\*|__)?[a-e][\)\s.-]\s?/i)) {
+              const lines = text.split(/\n/).filter(line => line.trim().length > 0);
+              const processedLines = lines.map((line, idx) => {
+                  const altMatch = line.trim().match(/^(\*\*|__)?[a-e][\)\s.-]\s?(.*)/i);
+                  if (altMatch) {
+                      const letterMatch = line.match(/[a-e]/i);
+                      const letter = letterMatch ? letterMatch[0] : 'a';
+                      const content = line.replace(/^(\*\*|__)?[a-e][\)\s.-]\s?/i, '');
+                      return renderOptionButton(letter, content, internalQIndex);
+                  }
+                  return <span key={idx}>{wrapWithGlossary(line)}<br/></span>;
+              });
+              return <div className="mb-4 leading-relaxed last:mb-0 print:text-black">{processedLines}</div>;
+          }
 
-          return <div className="mb-4 leading-relaxed last:mb-0 print:text-black">{processedLines}</div>;
+          // Se for um parágrafo comum, renderizamos os filhos preservando elementos (como links/botões)
+          return (
+              <div className="mb-4 leading-relaxed last:mb-0 print:text-black">
+                  {React.Children.map(props.children, child => {
+                      if (typeof child === 'string') return wrapWithGlossary(child);
+                      return child;
+                  })}
+              </div>
+          );
       },
       li: (props: any) => {
           const text = getCleanText(props.children);
@@ -1217,10 +1229,35 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
               const content = text.replace(/^(\*\*|__)?[a-e][\)\s.-]\s?/i, '');
               return renderOptionButton(letter, content, internalQIndex);
           }
-          return <li className="mb-1">{wrapWithGlossary(text)}</li>;
+          return (
+              <li className="mb-1">
+                  {React.Children.map(props.children, child => {
+                      if (typeof child === 'string') return wrapWithGlossary(child);
+                      return child;
+                  })}
+              </li>
+          );
       },
       strong: (props: any) => <strong className="text-telloo-neonGreen font-bold">{wrapWithGlossary(getCleanText(props.children))}</strong>,
       em: (props: any) => <em className="text-telloo-neonBlue italic">{wrapWithGlossary(getCleanText(props.children))}</em>,
+      a: (props: any) => {
+          const text = getCleanText(props.children);
+          if (text.startsWith('ASSISTIR:')) {
+              const label = text.replace('ASSISTIR:', '').trim();
+              return (
+                  <a 
+                      href={props.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 mt-2 px-5 py-2.5 bg-telloo-neonGreen text-black text-[11px] font-bold uppercase tracking-widest rounded-xl hover:scale-105 hover:shadow-[0_0_20px_rgba(0,255,157,0.4)] transition-all no-underline group/btn"
+                  >
+                      <Play size={14} fill="currentColor" className="group-hover/btn:animate-pulse" />
+                      Assistir: {label}
+                  </a>
+              );
+          }
+          return <a className="text-telloo-neonBlue hover:underline" target="_blank" rel="noopener noreferrer" {...props} />;
+      },
       code: ({ node, inline, className, children, ...props }: any) => {
         const content = String(children);
         if (!inline && content.trim().startsWith('<svg')) {
