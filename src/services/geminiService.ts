@@ -75,6 +75,7 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
     - Logo após a explicação técnica e ANTES da pergunta de verificação, você DEVE incluir uma seção chamada "### 🎬 Cine-Bio".
     - Sugira um filme, documentário ou série que tenha relação direta com o tema biológico discutido.
     - Explique em uma frase curta como a obra se conecta ao conceito científico.
+    - OBRIGATÓRIO: Sempre que possível, inclua um link para o filme, documentário ou trailer oficial no formato: [ASSISTIR: Nome da Obra](URL). Se não houver um link direto, sugira uma busca no YouTube.
 
     ESTRUTURA DE QUESTÕES:
     - Ao gerar questões de múltipla escolha (Objetiva, ENEM ou PROVA), use o formato:
