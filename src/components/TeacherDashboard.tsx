@@ -81,6 +81,12 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
+            drag="x"
+            dragConstraints={{ left: 0 }}
+            dragElastic={{ left: 0, right: 0.5 }}
+            onDragEnd={(_, info) => {
+              if (info.offset.x > 100) setIsOpen(false);
+            }}
             className="fixed inset-y-0 right-0 w-full sm:w-[450px] bg-slate-900 z-[70] shadow-2xl border-l border-white/10 flex flex-col"
           >
             <div className="p-6 border-b border-white/10 flex justify-between items-center">

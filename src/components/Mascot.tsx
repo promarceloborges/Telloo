@@ -9,13 +9,13 @@ interface Props {
 
 const Mascot: React.FC<Props> = ({ size = 'md', animated = false }) => {
   const sizes = {
-    sm: 'w-10 h-10',
+    sm: 'w-10 h-12',
     md: 'w-24 h-24',
     lg: 'w-48 h-48'
   };
 
   return (
-    <div className={`${sizes[size]} relative flex items-center justify-center`}>
+    <div className={`${sizes[size]} relative flex items-end justify-center overflow-visible`}>
       <motion.div
         animate={animated ? {
           scale: [1, 1.05, 1],

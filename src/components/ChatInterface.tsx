@@ -5,7 +5,8 @@ import { jsPDF } from 'jspdf';
 import { Message, ResponseMode, TeacherSettings, QuestionType } from '../types';
 import { streamMessageToGemini, streamQuestions, generateDeepDiveContent, generateSimulationMission, generateLearningPath } from '../services/geminiService';
 import Mascot from './Mascot';
-import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap, Mic, MessageCircle, LogOut } from 'lucide-react';
+import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap, Mic, MessageCircle, LogOut, MoreVertical, Maximize2, Minimize2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeRaw from 'rehype-raw';
@@ -40,12 +41,34 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
     }
   });
 
+  const [xp, setXp] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('telloo_xp');
+      return saved ? parseInt(saved) : 0;
+    } catch (e) {
+      return 0;
+    }
+  });
+
+  useEffect(() => {
+    localStorage.setItem('telloo_xp', xp.toString());
+  }, [xp]);
+
+  const level = Math.floor(xp / 100) + 1;
+  const progress = xp % 100;
+
+  const addXp = (amount: number) => {
+    setXp(prev => prev + amount);
+  };
+
+  const [isHeaderMenuOpen, setIsHeaderMenuOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [selectedMode, setSelectedMode] = useState<ResponseMode>(ResponseMode.CREATIVE);
   const [currentTopic, setCurrentTopic] = useState<string | null>(localStorage.getItem('telloo_current_topic'));
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isDrawerFullscreen, setIsDrawerFullscreen] = useState(false);
   const [isSimulationMode, setIsSimulationMode] = useState(false);
   const [drawerContent, setDrawerContent] = useState('');
   const [isDrawerLoading, setIsDrawerLoading] = useState(false);
@@ -619,6 +642,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
     setInputText('');
     setIsLoading(true);
     setHasError(false);
+    addXp(2);
 
     const modelMsgId = (Date.now() + 1).toString();
     const modelMsg: Message = { 
@@ -656,6 +680,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
   const handleOpenSimulation = async () => {
     setIsSimulationMode(true);
     setIsDrawerOpen(true);
+    addXp(5);
     
     // Se o tópico mudou, forçamos a atualização do conteúdo visual do laboratório
     setDrawerContent(`Laboratório iniciado para o tópico: **${currentTopic || 'Biologia'}**.`);
@@ -671,6 +696,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
     setIsSimulationMode(false);
     setIsDrawerOpen(true);
     setIsDrawerLoading(true);
+    addXp(10);
     generateDeepDiveContent(currentTopic || "Biologia", messages, settings).then(c => {
         setDrawerContent(c);
         setIsDrawerLoading(false);
@@ -1051,6 +1077,9 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
   };
 
   const selectOption = (msgId: string, qIndex: number, optionLetter: string) => {
+    if (!userSelections[msgId]?.[qIndex]) {
+        addXp(15);
+    }
     setUserSelections(prev => ({
         ...prev,
         [msgId]: {
@@ -1113,26 +1142,49 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
     return parts;
   };
 
-  const MarkdownComponents = (msgId: string, msgText: string, initialQIndex: number = 0) => {
+  const MarkdownComponents = (msgId: string, msgText: string, initialQIndex: number = 0, feedbacks: Record<number, { feedbackMap: Record<string, string>, correctAnswer: string | null }> = {}) => {
     let internalQIndex = initialQIndex;
 
     const renderOptionButton = (letter: string, content: string, qIdx: number) => {
         const normalizedLetter = letter.toLowerCase();
         const isSelected = userSelections[msgId]?.[qIdx] === normalizedLetter;
+        const feedback = feedbacks[qIdx]?.feedbackMap?.[normalizedLetter];
+        const isCorrect = feedbacks[qIdx]?.correctAnswer === normalizedLetter;
+        
         return (
-            <div key={`${letter}-${qIdx}`} onClick={() => selectOption(msgId, qIdx, normalizedLetter)} className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer group/opt mb-2 ${isSelected ? 'bg-telloo-neonBlue/20 border-telloo-neonBlue shadow-[0_0_15px_rgba(0,240,255,0.2)]' : 'bg-white/5 border-white/10 hover:border-white/30'}`}>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all font-bold text-[11px] uppercase ${isSelected ? 'bg-telloo-neonBlue border-telloo-neonBlue text-black' : 'border-white/30 text-gray-400 group-hover/opt:border-telloo-neonBlue/50'}`}>
-                    {letter}
+            <div key={`${letter}-${qIdx}`} className="mb-3">
+                <div 
+                    onClick={() => selectOption(msgId, qIdx, normalizedLetter)} 
+                    className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer group/opt ${isSelected ? (isCorrect ? 'bg-telloo-neonGreen/10 border-telloo-neonGreen shadow-[0_0_15px_rgba(0,255,157,0.2)]' : 'bg-red-500/10 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]') : 'bg-white/5 border-white/10 hover:border-white/30'}`}
+                >
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all font-bold text-[11px] uppercase ${isSelected ? (isCorrect ? 'bg-telloo-neonGreen border-telloo-neonGreen text-black' : 'bg-red-500 border-red-500 text-white') : 'border-white/30 text-gray-400 group-hover/opt:border-telloo-neonBlue/50'}`}>
+                        {letter}
+                    </div>
+                    <p className={`text-[15px] leading-relaxed ${isSelected ? 'text-white' : 'text-gray-300'}`}>{content}</p>
                 </div>
-                <p className={`text-[15px] leading-relaxed ${isSelected ? 'text-white' : 'text-gray-300'}`}>{content}</p>
+                
+                {isSelected && feedback && (
+                    <motion.div 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`mt-2 ml-9 p-3 rounded-lg border text-[13px] leading-relaxed ${isCorrect ? 'bg-telloo-neonGreen/5 border-telloo-neonGreen/20 text-telloo-neonGreen' : 'bg-red-500/5 border-red-500/20 text-red-400'}`}
+                    >
+                        <div className="flex items-center gap-2 mb-1 font-bold uppercase tracking-widest text-[10px]">
+                            {isCorrect ? <><Sparkles size={12}/> Bio-Acerto!</> : <><Info size={12}/> Bio-Insight:</>}
+                        </div>
+                        {feedback}
+                    </motion.div>
+                )}
             </div>
         );
     };
 
+    const isDrawer = msgId === 'drawer';
+
     return {
-      h1: (props: any) => <h1 className="text-[20px] sm:text-[22px] font-display font-bold text-telloo-neonGreen mt-6 mb-4 border-b border-telloo-neonGreen/20 pb-2 print:text-black print:border-black" {...props} />,
-      h2: (props: any) => <h2 className="text-[18px] sm:text-[20px] font-semibold text-white mt-6 mb-3 print:text-black" {...props} />,
-      h3: (props: any) => <h3 className="text-[16px] sm:text-[18px] font-medium text-telloo-neonBlue mt-4 mb-2 print:text-black" {...props} />,
+      h1: (props: any) => <h1 className={`${isDrawer ? 'text-[24px] sm:text-[28px]' : 'text-[20px] sm:text-[22px]'} font-display font-bold text-telloo-neonGreen mt-6 mb-4 border-b border-telloo-neonGreen/20 pb-2 print:text-black print:border-black`} {...props} />,
+      h2: (props: any) => <h2 className={`${isDrawer ? 'text-[20px] sm:text-[24px]' : 'text-[18px] sm:text-[20px]'} font-semibold text-white mt-6 mb-3 print:text-black`} {...props} />,
+      h3: (props: any) => <h3 className={`${isDrawer ? 'text-[18px] sm:text-[20px]' : 'text-[16px] sm:text-[18px]'} font-medium text-telloo-neonBlue mt-4 mb-2 print:text-black`} {...props} />,
       p: (props: any) => {
           const text = getCleanText(props.children);
           
@@ -1209,11 +1261,63 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
   };
 
   const memoizedMessages = useMemo(() => {
+    const parseAllFeedbacks = (answerKey: string) => {
+        const feedbacks: Record<number, { feedbackMap: Record<string, string>, correctAnswer: string | null }> = {};
+        
+        // Split by "Questão X:" if it exists, otherwise treat as single question
+        const questionSections = answerKey.split(/quest[ãa]o\s*(\d+):/i);
+        
+        if (questionSections.length > 1) {
+            for (let i = 1; i < questionSections.length; i += 2) {
+                const qNum = parseInt(questionSections[i]) - 1;
+                const content = questionSections[i + 1];
+                
+                const feedbackMap: Record<string, string> = {};
+                const feedbackSection = content.split(/feedback:/i)[1];
+                if (feedbackSection) {
+                    const lines = feedbackSection.split('\n');
+                    lines.forEach(line => {
+                        const match = line.trim().match(/^([a-e])\)\s*(.*)/i);
+                        if (match) {
+                            feedbackMap[match[1].toLowerCase()] = match[2];
+                        }
+                    });
+                }
+                
+                const correctMatch = content.match(/resposta:\s*([a-e])/i);
+                const correctAnswer = correctMatch ? correctMatch[1].toLowerCase() : null;
+                
+                feedbacks[qNum] = { feedbackMap, correctAnswer };
+            }
+        } else {
+            // Single question
+            const feedbackMap: Record<string, string> = {};
+            const feedbackSection = answerKey.split(/feedback:/i)[1];
+            if (feedbackSection) {
+                const lines = feedbackSection.split('\n');
+                lines.forEach(line => {
+                    const match = line.trim().match(/^([a-e])\)\s*(.*)/i);
+                    if (match) {
+                        feedbackMap[match[1].toLowerCase()] = match[2];
+                    }
+                });
+            }
+            
+            const correctMatch = answerKey.match(/resposta:\s*([a-e])/i);
+            const correctAnswer = correctMatch ? correctMatch[1].toLowerCase() : null;
+            
+            feedbacks[0] = { feedbackMap, correctAnswer };
+        }
+        
+        return feedbacks;
+    };
+
     return messages.map((msg, i) => {
       const suggestions = msg.role === 'model' && !msg.isStreaming ? extractSuggestions(msg.text) : [];
       const parts = msg.text.split('---GABARITO---');
       const questionContent = parts[0].replace(/\[SUGESTÃO:.*?\]/g, '');
       const answerKey = parts[1] || '';
+      const feedbacks = parseAllFeedbacks(answerKey);
       const isAnswerRevealed = revealedAnswers[msg.id];
       const isLast = i === messages.length - 1;
 
@@ -1243,7 +1347,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
             {msg.role === 'model' && msg.mode && <div className="flex items-center gap-2 mb-4 text-[10px] font-bold uppercase tracking-widest text-telloo-neonBlue bg-telloo-neonBlue/10 w-fit px-2 py-0.5 rounded border border-telloo-neonBlue/20 print:hidden"><Zap size={10}/> {msg.mode}</div>}
 
             <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed text-[15px] markdown-container print:text-black print:prose-black">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, questionContent)}>{questionContent}</ReactMarkdown>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, questionContent, 0, feedbacks)}>{questionContent}</ReactMarkdown>
             </div>
 
             {hasError && isLast && msg.role === 'model' && (
@@ -1331,16 +1435,41 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
     });
   }, [messages, revealedAnswers, userSelections, copiedId, hasError, selectedMode]);
 
+  useEffect(() => {
+    if (!isDrawerOpen) {
+      setIsDrawerFullscreen(false);
+    }
+  }, [isDrawerOpen]);
+
   return (
     <div className="flex flex-col h-screen bg-[#020617] text-white overflow-hidden">
-      <div className={`fixed inset-y-0 right-0 w-full sm:w-[500px] bg-slate-900 z-50 transform transition-transform border-l border-telloo-neonGreen/30 shadow-2xl ${isDrawerOpen ? 'translate-x-0' : 'translate-x-full'} print:hidden`}>
+      <motion.div
+        drag="x"
+        dragConstraints={{ left: 0 }}
+        dragElastic={{ left: 0, right: 0.5 }}
+        onDragEnd={(_, info) => {
+          if (info.offset.x > 100) setIsDrawerOpen(false);
+        }}
+        initial={{ x: '100%' }}
+        animate={{ x: isDrawerOpen ? 0 : '100%' }}
+        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+        className={`fixed inset-y-0 right-0 ${isDrawerFullscreen ? 'w-full' : 'w-full sm:w-[500px]'} bg-slate-900 z-50 border-l border-telloo-neonGreen/30 shadow-2xl transition-all duration-300 print:hidden`}
+      >
         <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
             <h2 className="font-display font-bold text-[19px] flex items-center gap-2 text-telloo-neonGreen uppercase tracking-tighter">
                 {isSimulationMode ? <><Beaker size={20}/> Bio-Sandbox</> : <><Library size={20}/> Bio-Data</>}
             </h2>
             <div className="flex items-center gap-2">
                 {!isSimulationMode && !isDrawerLoading && drawerContent && (
-                    <div className="relative group/drawer-exp">
+                    <>
+                        <button 
+                            onClick={() => setIsDrawerFullscreen(!isDrawerFullscreen)}
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors text-telloo-neonGreen"
+                            title={isDrawerFullscreen ? "Sair do Foco Total" : "Modo Foco Total"}
+                        >
+                            {isDrawerFullscreen ? <Minimize2 size={20}/> : <Maximize2 size={20}/>}
+                        </button>
+                        <div className="relative group/drawer-exp">
                         <button className="p-2 hover:bg-white/10 rounded-full transition-colors text-telloo-neonBlue">
                             <Share2 size={20}/>
                         </button>
@@ -1351,7 +1480,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                             <button onClick={() => exportDrawerContent('whatsapp')} className="w-full px-3 py-2 text-[11px] font-bold text-left hover:bg-white/5 text-green-400 flex items-center gap-2"><MessageCircle size={12}/> WHATSAPP</button>
                         </div>
                     </div>
-                )}
+                </>
+            )}
                 <button onClick={() => setIsDrawerOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors"><X/></button>
             </div>
         </div>
@@ -1395,7 +1525,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                                     <label className="text-[11px] font-black uppercase text-gray-400 tracking-tighter">{currentMission.controlName}</label>
                                     <span className="text-[11px] font-mono text-telloo-neonGreen">{simVariable} {currentMission.unit}</span>
                                 </div>
-                                <input type="range" min="0" max="100" value={simVariable} onChange={(e) => setSimVariable(parseInt(e.target.value))} className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-telloo-neonGreen" />
+                                <input type="range" min="0" max="100" value={simVariable} onChange={(e) => setSimVariable(parseInt(e.target.value))} className="w-full h-4 bg-slate-800 rounded-xl appearance-none cursor-pointer accent-telloo-neonGreen touch-none" />
                             </div>
                             <button onClick={handleSortearMissao} disabled={isMissionLoading} className="w-full flex items-center justify-center gap-2 p-2 bg-white/5 text-[10px] font-bold text-gray-500 rounded-lg uppercase tracking-widest hover:text-white transition-colors disabled:opacity-50">
                                 <RotateCcw size={12} className={isMissionLoading ? 'animate-spin' : ''}/> Sortear nova missão do tema
@@ -1409,12 +1539,12 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                     </div>
                 </div>
             ) : (
-                <div id="msg-content-drawer" className="prose prose-invert max-w-none custom-scrollbar print:bg-white print:text-black print:p-8">
+                <div id="msg-content-drawer" className={`prose prose-invert ${isDrawerFullscreen ? 'max-w-4xl mx-auto' : 'max-w-none'} custom-scrollbar text-[17px] leading-relaxed text-zinc-300 print:bg-white print:text-black print:p-8`}>
                     <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents('drawer', drawerContent)}>{drawerContent}</ReactMarkdown>
                 </div>
             )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Modal de Confirmação de Avaliação */}
       {isAssessmentModalOpen && (
@@ -1489,36 +1619,127 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
         </div>
       )}
 
-      <header className="p-3 border-b border-white/5 bg-slate-900/80 backdrop-blur-xl flex justify-between items-center sticky top-0 z-20 shadow-lg print:hidden">
-        <div className="flex items-center gap-3">
-            <Mascot size="sm" animated={isLoading} />
-            <div className="flex flex-col">
-                <h1 className="font-display font-bold text-telloo-neonGreen tracking-tighter leading-none text-[18px]">TELLOO</h1>
-                <div className="flex gap-2 items-center mt-0.5 max-w-[200px] sm:max-w-xs overflow-hidden">
-                    <span className="text-[8px] bg-telloo-neonBlue/10 px-1.5 py-0.5 rounded text-telloo-neonBlue font-bold uppercase tracking-widest truncate" title={currentTopic || 'Biologia'}>
+      <header className="py-3 px-4 border-b border-white/5 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-20 shadow-lg print:hidden">
+        <div className="flex items-center gap-3 w-full max-w-7xl mx-auto">
+            {/* Mascote com Círculo/Portal */}
+            <div className="relative group shrink-0">
+                    <div className="absolute inset-0 bg-gradient-to-br from-telloo-neonGreen/20 to-telloo-neonBlue/20 rounded-full blur-md group-hover:blur-lg transition-all duration-500"></div>
+                    <div className="relative w-14 h-14 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center shadow-inner overflow-hidden">
+                        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-telloo-neonGreen/5 via-transparent to-transparent"></div>
+                        <Mascot size="md" animated={isLoading} />
+                    </div>
+                    {isLoading && (
+                        <motion.div 
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 4, repeat: Infinity, ease: "linear" }}
+                            className="absolute -inset-1 border-t-2 border-r-2 border-telloo-neonGreen/30 rounded-full pointer-events-none"
+                        />
+                    )}
+                </div>
+
+                <div className="flex-1 flex flex-col min-w-0">
+                    <div className="flex justify-between items-center gap-4">
+                        <div className="flex items-center gap-2">
+                            <h1 className="font-display font-bold text-telloo-neonGreen tracking-tighter leading-none text-[24px]">TELLOO</h1>
+                            <span className="text-[8px] bg-white/5 px-2 py-0.5 rounded-full text-gray-500 font-bold uppercase tracking-widest border border-white/5 whitespace-nowrap">
+                                ENEM/SAEB
+                            </span>
+                        </div>
+
+                        {/* Lado Direito: Status e Menu */}
+                        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                            {/* Card de Status (NV e XP) */}
+                            <div className="hidden sm:flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-3 py-2 shadow-inner">
+                                <div className="relative group">
+                                    <div className="flex items-center gap-2 cursor-help">
+                                        <GraduationCap size={14} className="text-telloo-neonGreen" />
+                                        <span className="text-[11px] text-white font-black tracking-widest">
+                                            NV {level}
+                                        </span>
+                                    </div>
+                                    
+                                    {/* Tooltip de Nível */}
+                                    <div className="absolute top-full right-0 mt-3 w-56 p-3 bg-slate-800 border border-telloo-neonGreen/30 rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-[60] pointer-events-none">
+                                        <div className="space-y-2">
+                                            <p className="text-[10px] text-white leading-relaxed">
+                                                <span className="text-telloo-neonGreen font-bold italic">Nível {level}:</span> Foco em conceitos fundamentais e vocabulário básico.
+                                            </p>
+                                            <div className="h-px bg-white/10 w-full"></div>
+                                            <div className="flex justify-between items-center text-[9px] text-gray-400 font-bold uppercase tracking-tighter">
+                                                <span>SÍNTESE BIOLÓGICA</span>
+                                                <span className="text-telloo-neonGreen">{progress}%</span>
+                                            </div>
+                                        </div>
+                                        <div className="absolute bottom-full right-4 w-2 h-2 bg-slate-800 border-l border-t border-telloo-neonGreen/30 rotate-45 -mb-1"></div>
+                                    </div>
+                                </div>
+
+                                <div className="w-20 h-1.5 bg-black/40 rounded-full overflow-hidden relative group/bar">
+                                    <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${progress}%` }}
+                                        transition={{ type: 'spring', stiffness: 50, damping: 15 }}
+                                        className="h-full bg-gradient-to-r from-telloo-neonGreen to-telloo-neonBlue"
+                                    />
+                                    <motion.div
+                                        animate={{ x: ['-100%', '200%'] }}
+                                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                                        className="absolute inset-0 w-1/2 bg-gradient-to-r from-transparent via-white/10 to-transparent skew-x-12"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Mobile NV Badge */}
+                            <div className="sm:hidden flex items-center gap-1 bg-telloo-neonGreen/10 border border-telloo-neonGreen/20 px-2 py-0.5 rounded-lg">
+                                <span className="text-[8px] font-black text-telloo-neonGreen tracking-tighter">NV {level}</span>
+                            </div>
+
+                            <div className="relative">
+                                <button 
+                                    onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)} 
+                                    className={`p-2 transition-all rounded-xl border ${isHeaderMenuOpen ? 'bg-telloo-neonGreen/10 border-telloo-neonGreen/50 text-telloo-neonGreen shadow-[0_0_15px_rgba(0,255,157,0.1)]' : 'bg-white/5 border-white/10 text-gray-400 hover:text-telloo-neonGreen hover:border-telloo-neonGreen/30'}`}
+                                >
+                                    <MoreVertical size={18} />
+                                </button>
+                                
+                                {isHeaderMenuOpen && (
+                                    <>
+                                        <div className="fixed inset-0 z-40" onClick={() => setIsHeaderMenuOpen(false)}></div>
+                                        <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                            <div className="p-2 border-b border-white/5 bg-white/5">
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Exportar Estudo</p>
+                                            </div>
+                                            <button onClick={() => exportChat('txt')} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-white/5 hover:text-white border-b border-white/5 flex items-center gap-2 transition-colors">
+                                                <FileText size={14} className="text-gray-500" /> .TXT (Simples)
+                                            </button>
+                                            <button onClick={() => exportChat('pdf')} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-white/5 hover:text-white border-b border-white/5 flex items-center gap-2 transition-colors">
+                                                <Download size={14} className="text-telloo-neonBlue" /> .PDF (Formatado)
+                                            </button>
+                                            <div className="p-2 border-b border-white/5 bg-white/5">
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Sessão</p>
+                                            </div>
+                                            <button onClick={() => setIsClearConfirmOpen(true)} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-red-500/10 hover:text-red-400 border-b border-white/5 flex items-center gap-2 transition-colors">
+                                                <Eraser size={14} /> Limpar Histórico
+                                            </button>
+                                            <button onClick={onOpenSettings} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-white/5 hover:text-white border-b border-white/5 flex items-center gap-2 transition-colors">
+                                                <Settings size={14} /> Configurações
+                                            </button>
+                                            <button onClick={onLogout} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors">
+                                                <LogOut size={14} /> Sair do Telloo
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                <div className="flex items-center gap-1.5 mt-1">
+                    <div className="w-1 h-1 bg-telloo-neonBlue rounded-full animate-pulse"></div>
+                    <span className="text-[10px] text-telloo-neonBlue/80 font-bold uppercase tracking-widest truncate max-w-[150px] sm:max-w-[300px]" title={currentTopic || 'Biologia'}>
                         {currentTopic || 'Biologia'}
-                    </span>
-                    <span className="text-[8px] bg-white/5 px-1.5 py-0.5 rounded text-gray-500 font-bold uppercase tracking-widest whitespace-nowrap">
-                        ENEM/SAEB
                     </span>
                 </div>
             </div>
-        </div>
-        <div className="flex items-center gap-4">
-            <div className="relative">
-                <button onClick={() => setShowExportMenu(!showExportMenu)} className="p-2 text-gray-400 hover:text-telloo-neonGreen flex items-center gap-1" title="Exportar Estudo"><Download size={18}/></button>
-                {showExportMenu && (
-                    <div className="absolute right-0 mt-2 w-32 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden">
-                        <button onClick={() => exportChat('txt')} className="w-full px-4 py-2 text-left text-[11px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .TXT</button>
-                        <button onClick={() => exportChat('docx')} className="w-full px-4 py-2 text-left text-[11px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .DOCX</button>
-                        <button onClick={() => exportChat('pdf')} className="w-full px-4 py-2 text-left text-[11px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors border-b border-white/5 flex items-center gap-2"><FileText size={12}/> .PDF</button>
-                        <button onClick={() => exportChat('whatsapp')} className="w-full px-4 py-2 text-left text-[11px] font-bold uppercase tracking-widest hover:bg-white/5 transition-colors flex items-center gap-2 text-green-400"><MessageCircle size={12}/> WhatsApp</button>
-                    </div>
-                )}
-            </div>
-            <button onClick={clearChat} className="p-2 text-gray-500 hover:text-red-400 transition-colors" title="Limpar Histórico"><Eraser size={18}/></button>
-            <button onClick={onOpenSettings} className="p-2 text-telloo-neonGreen hover:scale-110 transition-transform" title="Configurações"><Settings size={20}/></button>
-            <button onClick={onLogout} className="p-2 text-gray-500 hover:text-red-400 transition-colors" title="Sair"><LogOut size={18}/></button>
         </div>
       </header>
 
