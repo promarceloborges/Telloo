@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import ChatInterface from './components/ChatInterface';
 import TeacherDashboard from './components/TeacherDashboard';
+import ErrorBoundary from './components/ErrorBoundary';
 import { TeacherSettings } from './types';
 import { BioStorage } from './services/storageService';
 
@@ -107,26 +108,28 @@ function App() {
   };
 
   return (
-    <div className="font-sans text-white min-h-screen">
-      {currentView === 'landing' ? (
-        <LandingPage onEnter={handleEnter} />
-      ) : (
-        <>
-          <ChatInterface 
-            userName={userName} 
-            settings={teacherSettings} 
-            onOpenSettings={() => setIsSettingsOpen(true)}
-            onLogout={handleLogout}
-          />
-          <TeacherDashboard 
-            isOpen={isSettingsOpen} 
-            setIsOpen={setIsSettingsOpen} 
-            settings={teacherSettings} 
-            onUpdate={setTeacherSettings} 
-          />
-        </>
-      )}
-    </div>
+    <ErrorBoundary>
+      <div className="font-sans text-white min-h-screen">
+        {currentView === 'landing' ? (
+          <LandingPage onEnter={handleEnter} />
+        ) : (
+          <>
+            <ChatInterface 
+              userName={userName} 
+              settings={teacherSettings} 
+              onOpenSettings={() => setIsSettingsOpen(true)}
+              onLogout={handleLogout}
+            />
+            <TeacherDashboard 
+              isOpen={isSettingsOpen} 
+              setIsOpen={setIsSettingsOpen} 
+              settings={teacherSettings} 
+              onUpdate={setTeacherSettings} 
+            />
+          </>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
 
