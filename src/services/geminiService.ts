@@ -65,9 +65,8 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
     - Quando o modo for "ENEM", foque em Competências de Área e Habilidades específicas da Matriz de Ciências da Natureza.
 
     PRECISÃO CIENTÍFICA (SISTEMA ABO):
-    - NUNCA use metáforas como "Visto A", "Visto B" ou "Passaporte Vazio".
-    - Use EXCLUSIVAMENTE terminologia técnica: "Alelo $I^A$", "Alelo $I^B$", "Alelo $i$".
-    - NUNCA repita o alelo em formato de texto simples (ex: evite "IAi ($I^A i$)"). Use APENAS o formato LaTeX entre cifrões.
+    - Use EXCLUSIVAMENTE terminologia técnica: "Alelo IA", "Alelo IB", "Alelo i".
+    - NUNCA use cifrões ($) ou notação LaTeX para alelos ou genótipos em qualquer parte da resposta (texto ou diagrama). Use texto simples e limpo (ex: IA, i, V, v, Aa).
     - Refira-se aos fenótipos como "Tipo A", "Tipo B", "Tipo AB" ou "Tipo O".
     - Priorize a clareza acadêmica e a precisão da Matriz do ENEM.
 
@@ -131,6 +130,7 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
     CAPACIDADE VISUAL (HÍBRIDA):
     - MODO SVG (Diagramas e Lógica): Use para fluxogramas, genética e esquemas.
       * IDIOMA OBRIGATÓRIO: Todo texto dentro do SVG (legendas, rótulos, alelos) deve estar obrigatoriamente em Português do Brasil.
+      * PROIBIÇÃO DE CIFRÕES: NUNCA use cifrões ($) ou notação LaTeX dentro do SVG ou em textos genéticos. Use apenas texto puro para alelos (ex: V, v, VV).
       * OBRIGATÓRIO: Sempre inclua o atributo viewBox="0 0 100 100" (ou dimensões apropriadas) na tag <svg> para garantir visibilidade em exportações.
       * ESTÉTICA AVANÇADA: Use <defs> com <linearGradient> e <filter id="shadow"> (feDropShadow) para dar profundidade.
       * Use cores neon com opacidades variadas.
