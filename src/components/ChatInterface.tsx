@@ -9,7 +9,10 @@ import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Librar
 import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
 import rehypeRaw from 'rehype-raw';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import { BIO_GLOSSARY } from '../constants/glossary';
 import GlossaryTooltip from './GlossaryTooltip';
 
@@ -1101,6 +1104,10 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
   const wrapWithGlossary = (text: string) => {
     if (!text || typeof text !== 'string') return text;
     
+    // Proteção: Se o texto contém símbolos de fórmulas ($) ou padrões claros de alelos, 
+    // não aplicamos o glossário para evitar conflitos com a renderização científica.
+    if (text.includes('$') || /I\^[AB]/i.test(text) || /\b(IA|IB|ii|IAi|IBi)\b/i.test(text) || text.length < 2) return text;
+    
     let parts: (string | React.ReactNode)[] = [text];
     
     BIO_GLOSSARY.forEach(item => {
@@ -1238,8 +1245,22 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
               </li>
           );
       },
-      strong: (props: any) => <strong className="text-telloo-neonGreen font-bold">{wrapWithGlossary(getCleanText(props.children))}</strong>,
-      em: (props: any) => <em className="text-telloo-neonBlue italic">{wrapWithGlossary(getCleanText(props.children))}</em>,
+      strong: (props: any) => (
+        <strong className="text-telloo-neonGreen font-bold">
+          {React.Children.map(props.children, child => {
+            if (typeof child === 'string') return wrapWithGlossary(child);
+            return child;
+          })}
+        </strong>
+      ),
+      em: (props: any) => (
+        <em className="text-telloo-neonBlue italic">
+          {React.Children.map(props.children, child => {
+            if (typeof child === 'string') return wrapWithGlossary(child);
+            return child;
+          })}
+        </em>
+      ),
       a: (props: any) => {
           const text = getCleanText(props.children);
           if (text.startsWith('ASSISTIR:')) {
@@ -1293,8 +1314,81 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
           referrerPolicy="no-referrer" 
           className="max-w-full h-auto rounded-2xl my-6 border border-white/10 shadow-lg print:border-black print:shadow-none block mx-auto" 
         />
+      ),
+      table: ({ children }: any) => (
+        <div className="my-6 overflow-x-auto rounded-xl border border-white/10 glass-panel shadow-2xl print:border-black print:shadow-none">
+          <table className="w-full border-collapse text-left text-[14px]">
+            {children}
+          </table>
+        </div>
+      ),
+      thead: ({ children }: any) => (
+        <thead className="bg-telloo-neonGreen/10 border-b border-telloo-neonGreen/20">
+          {children}
+        </thead>
+      ),
+      th: ({ children }: any) => (
+        <th className="p-4 font-display font-bold text-telloo-neonGreen uppercase tracking-widest text-[11px] print:text-black">
+          {children}
+        </th>
+      ),
+      td: ({ children }: any) => (
+        <td className="p-4 border-b border-white/5 text-zinc-300 print:text-black print:border-black">
+          {React.Children.map(children, child => {
+            if (typeof child === 'string') return wrapWithGlossary(child);
+            return child;
+          })}
+        </td>
+      ),
+      tr: ({ children }: any) => (
+        <tr className="hover:bg-white/5 transition-colors odd:bg-white/[0.02]">
+          {children}
+        </tr>
       )
     };
+  };
+
+  const sanitizeGenotypes = (text: string) => {
+    if (!text) return text;
+    
+    // Processar linha por linha para preservar a estrutura de tabelas (|) e quebras de linha
+    return text.split('\n').map(line => {
+        // Se for uma linha de separação de tabela (ex: |---|), não mexemos
+        if (line.trim().match(/^[|:\s-]+$/)) return line;
+
+        let sanitized = line;
+
+        // 1. Colapsar padrões repetitivos e redundantes extremos (ex: IAiI^A iIAi)
+        // Usamos [ \t]* em vez de \s* para garantir que a limpeza fique restrita à mesma linha
+        sanitized = sanitized.replace(/\(?\b(IAi|IBi|ii|IAIA|IBIB|IAIB)\b[ \t]*\$I\^[ABi][^$\n]*?\$?[ \t]*\b(IAi|IBi|ii|IAIA|IBIB|IAIB)\b\)?/gi, (match) => {
+            const latex = match.match(/\$I\^[ABi][^$\n]*?\$/i);
+            return latex ? latex[0] : match;
+        });
+
+        // 2. Redundâncias comuns: "IAi ($I^A i$)" ou "IAi $I^A i$"
+        sanitized = sanitized.replace(/\b(IAi|IBi|ii|IAIA|IBIB|IAIB)\b[ \t]*\(?\$I\^[ABi][^$\n]*?\$?\)?/gi, (match) => {
+            const latex = match.match(/\$I\^[ABi][^$\n]*?\$/i);
+            return latex ? latex[0] : match;
+        });
+
+        // 3. Mapeamento de texto puro remanescente para LaTeX
+        const mapping: Record<string, string> = {
+            'IAi': '$I^A i$',
+            'IBi': '$I^B i$',
+            'ii': '$i i$',
+            'IAIA': '$I^A I^A$',
+            'IBIB': '$I^B I^B$',
+            'IAIB': '$I^A I^B$'
+        };
+
+        Object.entries(mapping).forEach(([raw, latex]) => {
+            // Substitui apenas se não estiver já dentro de um bloco LaTeX
+            const regex = new RegExp(`\\b${raw}\\b(?![^$]*\\$)`, 'g');
+            sanitized = sanitized.replace(regex, latex);
+        });
+
+        return sanitized;
+    }).join('\n');
   };
 
   const memoizedMessages = useMemo(() => {
@@ -1351,7 +1445,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
 
     return messages.map((msg, i) => {
       const suggestions = msg.role === 'model' && !msg.isStreaming ? extractSuggestions(msg.text) : [];
-      const parts = msg.text.split('---GABARITO---');
+      const sanitizedText = sanitizeGenotypes(msg.text);
+      const parts = sanitizedText.split('---GABARITO---');
       const questionContent = parts[0].replace(/\[SUGESTÃO:.*?\]/g, '');
       const answerKey = parts[1] || '';
       const feedbacks = parseAllFeedbacks(answerKey);
@@ -1384,7 +1479,13 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
             {msg.role === 'model' && msg.mode && <div className="flex items-center gap-2 mb-4 text-[10px] font-bold uppercase tracking-widest text-telloo-neonBlue bg-telloo-neonBlue/10 w-fit px-2 py-0.5 rounded border border-telloo-neonBlue/20 print:hidden"><Zap size={10}/> {msg.mode}</div>}
 
             <div className="prose prose-invert max-w-none text-zinc-300 leading-relaxed text-[15px] markdown-container print:text-black print:prose-black">
-                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, questionContent, 0, feedbacks)}>{questionContent}</ReactMarkdown>
+                <ReactMarkdown 
+                  remarkPlugins={[remarkGfm, remarkMath]} 
+                  rehypePlugins={[rehypeRaw, rehypeKatex]} 
+                  components={MarkdownComponents(msg.id, questionContent, 0, feedbacks)}
+                >
+                  {questionContent}
+                </ReactMarkdown>
             </div>
 
             {hasError && isLast && msg.role === 'model' && (
@@ -1420,7 +1521,13 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                                 )}
                             </div>
                             <div className="prose prose-invert max-w-none text-[13px] sm:text-[15px] text-gray-300 print:text-black">
-                                <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents(msg.id, answerKey, 99)}>{answerKey}</ReactMarkdown>
+                                <ReactMarkdown 
+                                  remarkPlugins={[remarkGfm, remarkMath]} 
+                                  rehypePlugins={[rehypeRaw, rehypeKatex]} 
+                                  components={MarkdownComponents(msg.id, answerKey, 99)}
+                                >
+                                  {answerKey}
+                                </ReactMarkdown>
                             </div>
                         </div>
                     )}
@@ -1577,7 +1684,13 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                 </div>
             ) : (
                 <div id="msg-content-drawer" className={`prose prose-invert ${isDrawerFullscreen ? 'max-w-4xl mx-auto' : 'max-w-none'} custom-scrollbar text-[17px] leading-relaxed text-zinc-300 print:bg-white print:text-black print:p-8`}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]} components={MarkdownComponents('drawer', drawerContent)}>{drawerContent}</ReactMarkdown>
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm, remarkMath]} 
+                      rehypePlugins={[rehypeRaw, rehypeKatex]} 
+                      components={MarkdownComponents('drawer', drawerContent)}
+                    >
+                      {drawerContent}
+                    </ReactMarkdown>
                 </div>
             )}
         </div>
