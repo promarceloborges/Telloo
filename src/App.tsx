@@ -44,7 +44,8 @@ function App() {
       enemMode: false,
       bnccFocus: true,
       pdfContent: '',
-      pdfName: ''
+      pdfName: '',
+      repoUrl: ''
     };
   });
 
