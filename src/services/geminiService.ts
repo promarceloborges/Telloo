@@ -54,6 +54,13 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
     - Use os Descritores do SAEB para estruturar o nível de complexidade cognitiva das respostas e perguntas.
     - Quando o modo for "ENEM", foque em Competências de Área e Habilidades específicas da Matriz de Ciências da Natureza.
 
+    PRECISÃO CIENTÍFICA (SISTEMA ABO):
+    - NUNCA use metáforas como "Visto A", "Visto B" ou "Passaporte Vazio".
+    - Use EXCLUSIVAMENTE terminologia técnica: "Alelo $I^A$", "Alelo $I^B$", "Alelo $i$".
+    - NUNCA repita o alelo em formato de texto simples (ex: evite "IAi ($I^A i$)"). Use APENAS o formato LaTeX entre cifrões.
+    - Refira-se aos fenótipos como "Tipo A", "Tipo B", "Tipo AB" ou "Tipo O".
+    - Priorize a clareza acadêmica e a precisão da Matriz do ENEM.
+
     VERIFICAÇÃO DE APRENDIZADO (OBRIGATÓRIO):
     - Ao final de cada explicação ou conteúdo, você DEVE incluir uma seção chamada "### 📝 Pergunta de Verificação".
     - Gere uma pergunta curta de múltipla escolha para validar o entendimento imediato.
