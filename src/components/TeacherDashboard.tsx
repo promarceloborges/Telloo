@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Save, Book, Target, GraduationCap, FileText, Loader2 } from 'lucide-react';
+import { X, Save, Book, Target, GraduationCap, FileText, Loader2, Check, Library } from 'lucide-react';
 import { TeacherSettings } from '../types';
 
 interface Props {
@@ -16,6 +16,13 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
 
   const handleChange = (field: keyof TeacherSettings, value: any) => {
     onUpdate({ ...settings, [field]: value });
+    
+    // Feedback imediato para URL do repositório
+    if (field === 'repoUrl' && value && value !== settings.repoUrl) {
+      window.dispatchEvent(new CustomEvent('telloo_system_message', { 
+        detail: `Recebi a URL do repositório com sucesso! 🔗\n\nAgora estou conectado a esta fonte adicional para enriquecer nossas descobertas.` 
+      }));
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,6 +31,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
 
     setIsUploading(true);
     try {
+      let content = '';
       if (file.type === 'application/pdf') {
         // Importação dinâmica para evitar quebra na carga inicial (tela branca)
         const pdfjs = await import('pdfjs-dist');
@@ -40,24 +48,28 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
           const pageText = textContent.items.map((item: any) => item.str).join(' ');
           fullText += pageText + '\n';
         }
-        handleChange('pdfContent', fullText);
-        handleChange('pdfName', file.name);
+        content = fullText;
       } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
         const mammoth = await import('mammoth');
         const arrayBuffer = await file.arrayBuffer();
         const result = await mammoth.extractRawText({ arrayBuffer });
-        handleChange('pdfContent', result.value);
-        handleChange('pdfName', file.name);
+        content = result.value;
       } else {
         // Fallback para texto plano
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const content = event.target?.result as string;
-          handleChange('pdfContent', content);
-          handleChange('pdfName', file.name);
-        };
-        reader.readAsText(file);
+        content = await file.text();
       }
+
+      onUpdate({
+        ...settings,
+        pdfContent: content,
+        pdfName: file.name
+      });
+
+      // Disparar mensagem de sucesso no chat
+      window.dispatchEvent(new CustomEvent('telloo_system_message', { 
+        detail: `O arquivo **${file.name}** foi recebido e processado com sucesso! 📄✅\n\nJá integrei esse material ao meu núcleo de conhecimento.` 
+      }));
+
     } catch (error) {
       console.error("Erro ao ler arquivo:", error);
       alert("Erro ao ler o arquivo. Tente um formato de texto simples.");
@@ -101,7 +113,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
             <div className="flex-1 overflow-y-auto p-6 space-y-8">
               <div className="space-y-4">
                 <label className="text-[13px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                  <Book size={14} /> Nível de Ensino
+                  <Book size={14} /> Nível de Ensino/Fonte
                 </label>
                 <select
                   value={settings.gradeLevel}
@@ -115,6 +127,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
                   <option value="1º Ano EM">Ensino Médio - 1º Ano</option>
                   <option value="2º Ano EM">Ensino Médio - 2º Ano</option>
                   <option value="3º Ano EM">Ensino Médio - 3º Ano</option>
+                  <option value="Amabis Martho">Livro didático Amabis e Martho</option>
                 </select>
               </div>
 
@@ -167,6 +180,19 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
 
               <div className="space-y-4">
                 <label className="text-[13px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                  <Library size={14} /> Fonte via URL (Repositório)
+                </label>
+                <input
+                  type="url"
+                  value={settings.repoUrl || ''}
+                  onChange={(e) => handleChange('repoUrl', e.target.value)}
+                  placeholder="https://github.com/usuario/repo/arquivo.pdf"
+                  className="w-full bg-slate-800 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-telloo-neonGreen"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-[13px] font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                   <FileText size={14} /> Material de Apoio (Texto/PDF/DOCX)
                 </label>
                 <div className="relative">
@@ -180,15 +206,20 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
                   />
                   <label
                     htmlFor="file-upload"
-                    className={`flex items-center justify-center gap-2 w-full bg-slate-800 border border-dashed border-white/20 rounded-xl p-6 cursor-pointer hover:border-telloo-neonGreen transition-all group ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
+                    className={`flex items-center justify-center gap-2 w-full bg-slate-800 border border-dashed rounded-xl p-6 cursor-pointer transition-all group ${isUploading ? 'opacity-50 cursor-wait border-white/20' : (settings.pdfName ? 'border-telloo-neonGreen/50 bg-telloo-neonGreen/5' : 'border-white/20 hover:border-telloo-neonGreen')}`}
                   >
                     <div className="text-center">
                       {isUploading ? (
                         <Loader2 className="mx-auto mb-2 text-telloo-neonGreen animate-spin" />
+                      ) : settings.pdfName ? (
+                        <div className="flex flex-col items-center">
+                          <Check className="mx-auto mb-2 text-telloo-neonGreen" />
+                          <span className="text-[11px] text-telloo-neonGreen font-bold uppercase tracking-tighter mb-1">Material lido com sucesso!</span>
+                        </div>
                       ) : (
                         <FileText className="mx-auto mb-2 text-gray-500 group-hover:text-telloo-neonGreen transition-colors" />
                       )}
-                      <span className="text-[13px] font-bold text-gray-400 group-hover:text-white">
+                      <span className={`text-[13px] font-bold ${settings.pdfName && !isUploading ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
                         {isUploading ? 'Lendo arquivo...' : (settings.pdfName || 'Clique para anexar material')}
                       </span>
                     </div>
@@ -205,6 +236,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
                     </button>
                   )}
                 </div>
+                <p className="text-[10px] text-gray-500 text-center">Suporta arquivos de até 20MB</p>
               </div>
             </div>
 

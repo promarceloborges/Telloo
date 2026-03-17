@@ -30,7 +30,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
       return saved ? JSON.parse(saved) : [{
         id: 'intro',
         role: 'model',
-        text: `Olá, **${userName || 'Estudante'}**! Eu sou o Telloo, sua Inteligência Biológica de alto desempenho. 🧬\n\nNo momento, estou operando com foco em **${settings.enemMode ? 'ENEM' : 'BNCC'}** para o **${settings.gradeLevel}**. ${settings.currentChapter ? `\n\nJá processei as diretrizes sobre **${settings.currentChapter}** e estou pronto para começarmos.` : ''}\n\nPodemos estruturar **Mapas Mentais**, enfrentar **Desafios** ou testar hipóteses no nosso laboratório **Bio-Sandbox**. O que vamos descobrir hoje?`,
+        text: `Olá, **${userName || 'Estudante'}**! Eu sou o Telloo, sua Inteligência Biológica de alto desempenho. 🧬\n\nNo momento, estou operando com foco em **${settings.enemMode ? 'ENEM' : 'BNCC'}** para o **${settings.gradeLevel === 'Amabis Martho' ? 'Livro Amabis e Martho' : settings.gradeLevel}**. ${settings.currentChapter ? `\n\nJá processei as diretrizes sobre **${settings.currentChapter}** e estou pronto para começarmos.` : ''}\n\nPodemos estruturar **Mapas Mentais**, enfrentar **Desafios** ou testar hipóteses no nosso laboratório **Bio-Sandbox**. O que vamos descobrir hoje?`,
         timestamp: Date.now()
       }];
     } catch (e) {
@@ -38,7 +38,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
       return [{
         id: 'intro',
         role: 'model',
-        text: `Olá, **${userName || 'Estudante'}**! Eu sou o Telloo, sua Inteligência Biológica de alto desempenho. 🧬\n\nNo momento, estou operando com foco em **${settings.enemMode ? 'ENEM' : 'BNCC'}** para o **${settings.gradeLevel}**. ${settings.currentChapter ? `\n\nJá processei as diretrizes sobre **${settings.currentChapter}** e estou pronto para começarmos.` : ''}\n\nPodemos estruturar **Mapas Mentais**, enfrentar **Desafios** ou testar hipóteses no nosso laboratório **Bio-Sandbox**. O que vamos descobrir hoje?`,
+        text: `Olá, **${userName || 'Estudante'}**! Eu sou o Telloo, sua Inteligência Biológica de alto desempenho. 🧬\n\nNo momento, estou operando com foco em **${settings.enemMode ? 'ENEM' : 'BNCC'}** para o **${settings.gradeLevel === 'Amabis Martho' ? 'Livro Amabis e Martho' : settings.gradeLevel}**. ${settings.currentChapter ? `\n\nJá processei as diretrizes sobre **${settings.currentChapter}** e estou pronto para começarmos.` : ''}\n\nPodemos estruturar **Mapas Mentais**, enfrentar **Desafios** ou testar hipóteses no nosso laboratório **Bio-Sandbox**. O que vamos descobrir hoje?`,
         timestamp: Date.now()
       }];
     }
@@ -86,6 +86,23 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
 
   const [userSelections, setUserSelections] = useState<Record<string, Record<number, string>>>({});
   const [revealedAnswers, setRevealedAnswers] = useState<Record<string, boolean>>({});
+
+  // Listener para mensagens do sistema vindas do Dashboard
+  useEffect(() => {
+    const handleSystemMessage = (e: any) => {
+      const text = e.detail;
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        role: 'model',
+        text,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, newMessage]);
+    };
+
+    window.addEventListener('telloo_system_message', handleSystemMessage);
+    return () => window.removeEventListener('telloo_system_message', handleSystemMessage);
+  }, []);
 
   const [simVariable, setSimVariable] = useState(50);
   const [missionIndex, setMissionIndex] = useState(0);
@@ -1007,7 +1024,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
     setMessages([{ 
         id: 'intro', 
         role: 'model', 
-        text: `Olá! Eu sou o **Telloo**, seu tutor especializado em Biologia. 🧬\n\nEstou configurado para o **${settings.gradeLevel}**. O que vamos explorar hoje?`,
+        text: `Olá! Eu sou o **Telloo**, seu tutor especializado em Biologia. 🧬\n\nEstou configurado para o **${settings.gradeLevel === 'Amabis Martho' ? 'Livro Amabis e Martho' : settings.gradeLevel}**. O que vamos explorar hoje?`,
         timestamp: Date.now()
     }]);
     setCurrentTopic('');
