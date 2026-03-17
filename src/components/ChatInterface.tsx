@@ -127,6 +127,25 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
   const inputRef = useRef<HTMLInputElement>(null);
   const recognitionRef = useRef<any>(null);
   const lastScrolledId = useRef<string | null>(null);
+  const headerMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent | TouchEvent) => {
+      if (headerMenuRef.current && !headerMenuRef.current.contains(event.target as Node)) {
+        setIsHeaderMenuOpen(false);
+      }
+    };
+
+    if (isHeaderMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('touchstart', handleClickOutside);
+    }
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isHeaderMenuOpen]);
 
   useEffect(() => {
     return () => {
@@ -1861,7 +1880,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                                 <span className="text-[8px] font-black text-telloo-neonGreen tracking-tighter">NV {level}</span>
                             </div>
 
-                            <div className="relative">
+                            <div className="relative" ref={headerMenuRef}>
                                 <button 
                                     onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)} 
                                     className={`p-2 transition-all rounded-xl border ${isHeaderMenuOpen ? 'bg-telloo-neonGreen/10 border-telloo-neonGreen/50 text-telloo-neonGreen shadow-[0_0_15px_rgba(0,255,157,0.1)]' : 'bg-white/5 border-white/10 text-gray-400 hover:text-telloo-neonGreen hover:border-telloo-neonGreen/30'}`}
@@ -1870,32 +1889,29 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                                 </button>
                                 
                                 {isHeaderMenuOpen && (
-                                    <>
-                                        <div className="fixed inset-0 z-40" onClick={() => setIsHeaderMenuOpen(false)}></div>
-                                        <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
-                                            <div className="p-2 border-b border-white/5 bg-white/5">
-                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Exportar Estudo</p>
-                                            </div>
-                                            <button onClick={() => exportChat('txt')} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-white/5 hover:text-white border-b border-white/5 flex items-center gap-2 transition-colors">
-                                                <FileText size={14} className="text-gray-500" /> .TXT (Simples)
-                                            </button>
-                                            <button onClick={() => exportChat('pdf')} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-white/5 hover:text-white border-b border-white/5 flex items-center gap-2 transition-colors">
-                                                <Download size={14} className="text-telloo-neonBlue" /> .PDF (Formatado)
-                                            </button>
-                                            <div className="p-2 border-b border-white/5 bg-white/5">
-                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Sessão</p>
-                                            </div>
-                                            <button onClick={() => setIsClearConfirmOpen(true)} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-red-500/10 hover:text-red-400 border-b border-white/5 flex items-center gap-2 transition-colors">
-                                                <Eraser size={14} /> Limpar Histórico
-                                            </button>
-                                            <button onClick={onOpenSettings} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-white/5 hover:text-white border-b border-white/5 flex items-center gap-2 transition-colors">
-                                                <Settings size={14} /> Configurações
-                                            </button>
-                                            <button onClick={onLogout} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors">
-                                                <LogOut size={14} /> Sair do Telloo
-                                            </button>
+                                    <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-white/10 rounded-xl shadow-2xl z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                        <div className="p-2 border-b border-white/5 bg-white/5">
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Exportar Estudo</p>
                                         </div>
-                                    </>
+                                        <button onClick={() => exportChat('txt')} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-white/5 hover:text-white border-b border-white/5 flex items-center gap-2 transition-colors">
+                                            <FileText size={14} className="text-gray-500" /> .TXT (Simples)
+                                        </button>
+                                        <button onClick={() => exportChat('pdf')} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-white/5 hover:text-white border-b border-white/5 flex items-center gap-2 transition-colors">
+                                            <Download size={14} className="text-telloo-neonBlue" /> .PDF (Formatado)
+                                        </button>
+                                        <div className="p-2 border-b border-white/5 bg-white/5">
+                                            <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">Sessão</p>
+                                        </div>
+                                        <button onClick={() => setIsClearConfirmOpen(true)} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-red-500/10 hover:text-red-400 border-b border-white/5 flex items-center gap-2 transition-colors">
+                                            <Eraser size={14} /> Limpar Histórico
+                                        </button>
+                                        <button onClick={onOpenSettings} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-gray-300 hover:bg-white/5 hover:text-white border-b border-white/5 flex items-center gap-2 transition-colors">
+                                            <Settings size={14} /> Configurações
+                                        </button>
+                                        <button onClick={onLogout} className="w-full px-4 py-2.5 text-[11px] font-bold text-left text-red-400 hover:bg-red-500/10 flex items-center gap-2 transition-colors">
+                                            <LogOut size={14} /> Sair do Telloo
+                                        </button>
+                                    </div>
                                 )}
                             </div>
                         </div>
