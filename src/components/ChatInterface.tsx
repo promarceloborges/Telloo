@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -1622,7 +1621,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
   }, [isDrawerOpen]);
 
   return (
-    <div className="flex flex-col h-screen bg-[#020617] text-white overflow-hidden">
+    <div className="flex flex-col h-[100dvh] bg-[#020617] text-white overflow-hidden">
       <motion.div
         drag="x"
         dragConstraints={{ left: 0 }}
@@ -1805,7 +1804,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
         </div>
       )}
 
-      <header className="py-3 px-4 border-b border-white/5 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-20 shadow-lg print:hidden">
+      <header className="pt-[calc(0.75rem+env(safe-area-inset-top))] pb-3 px-4 border-b border-white/5 bg-slate-900/80 backdrop-blur-xl sticky top-0 z-20 shadow-lg print:hidden">
         <div className="flex items-center gap-3 w-full max-w-7xl mx-auto">
             {/* Mascote com Círculo/Portal */}
             <div className="relative group shrink-0">
@@ -1926,12 +1925,12 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
         </div>
       </header>
 
-      <main ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-8 custom-scrollbar pb-32 sm:pb-40 print:p-0 print:bg-white print:text-black print:overflow-visible">
+      <main ref={scrollContainerRef} className="flex-1 overflow-y-auto p-4 space-y-8 custom-scrollbar pb-6 print:p-0 print:bg-white print:text-black print:overflow-visible">
         {memoizedMessages}
         <div ref={messagesEndRef} />
       </main>
 
-      <footer className="p-4 bg-slate-900/80 backdrop-blur-xl border-t border-white/5 fixed bottom-0 w-full z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.3)] print:hidden">
+      <footer className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] bg-slate-900/80 backdrop-blur-xl border-t border-white/5 z-20 shadow-[0_-10px_30px_rgba(0,0,0,0.3)] print:hidden">
         <div className="max-w-4xl mx-auto space-y-3">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
                 {[
