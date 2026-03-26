@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Message, ResponseMode, TeacherSettings, QuestionRequest } from "../types";
 
@@ -66,8 +67,16 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
 
     DIRETRIZES DE INCLUSÃO E ADAPTAÇÃO (DUA):
     - Você deve estar atento a pedidos de adaptação para alunos com necessidades especiais (TEA, TDAH, Dislexia, Deficiência Intelectual, etc.).
-    - Se o material de apoio anexado (${settings.pdfName}) contiver perfis de alunos ou estratégias de inclusão, use-os como base prioritária para personalizar a linguagem e o nível de complexidade.
-    - REGRAS DE ADAPTAÇÃO:
+    - MATERIAL DE APOIO GERAL: ${settings.pdfName ? `Baseie-se no arquivo "${settings.pdfName}" para o conteúdo técnico.` : 'Use seu conhecimento base de Biologia.'}
+    - PERFIS DE INCLUSÃO (PRIORIDADE MÁXIMA): ${settings.inclusionPdfName ? `
+      * O arquivo "${settings.inclusionPdfName}" contém as características e necessidades específicas dos alunos com deficiência desta turma.
+      * Use o conteúdo abaixo como guia absoluto para adaptar a linguagem, o nível de complexidade e o formato das atividades:
+      --- INÍCIO DOS PERFIS DE INCLUSÃO ---
+      ${settings.inclusionPdfContent}
+      --- FIM DOS PERFIS DE INCLUSÃO ---
+      * Se o professor mencionar o nome de um aluno que consta neste material, aplique IMEDIATAMENTE as estratégias personalizadas listadas para ele.
+    ` : 'Adapte o conteúdo seguindo as melhores práticas de DUA para os perfis mencionados pelo professor.'}
+    - REGRAS DE ADAPTAÇÃO GERAIS:
       1. TDAH/DISLEXIA: Use instruções curtas, diretas, negritos estratégicos e evite blocos de texto muito densos.
       2. TEA (AUTISMO): Use linguagem literal e objetiva, evite metáforas ambíguas e priorize o apoio visual (diagramas SVG).
       3. DEFICIÊNCIA INTELECTUAL: Simplifique conceitos abstratos usando exemplos concretos do cotidiano e organize atividades em pequenas etapas.
@@ -192,7 +201,7 @@ export const streamMessageToGemini = async (
       await withRetry(async () => {
         const responseStream = await ai.models.generateContentStream({
           model: 'gemini-3-flash-preview',
-          contents: [...recentHistory, { role: 'user', parts: [{ text: `[MODO: ${mode}] [ASSUNTO PRIORITÁRIO: ${settings.currentChapter || 'Biologia'}] [REFERÊNCIA: ${BOOK_URL}] ${newMessage}. Foque exclusivamente no conteúdo biológico, não descreva suas funções.` }] }],
+          contents: [...recentHistory, { role: 'user', parts: [{ text: `[MODO: ${mode}] [ASSUNTO PRIORITÁRIO: ${settings.currentChapter || 'Biologia'}] [REFERÊNCIA: ${BOOK_URL}] ${settings.repoUrl ? `[FONTE_ADICIONAL: ${settings.repoUrl}]` : ''} ${newMessage}. Foque exclusivamente no conteúdo biológico, não descreva suas funções.` }] }],
           config: {
             systemInstruction: getSystemInstruction(settings),
             temperature: 0.7,
@@ -272,7 +281,7 @@ export const streamQuestions = async (
       await withRetry(async () => {
         const responseStream = await ai.models.generateContentStream({
             model: 'gemini-3-flash-preview',
-            contents: `[REFERÊNCIA: ${BOOK_URL}] ${prompt}`,
+            contents: `[REFERÊNCIA: ${BOOK_URL}] ${settings.repoUrl ? `[FONTE_ADICIONAL: ${settings.repoUrl}]` : ''} ${prompt}`,
             config: { 
               systemInstruction: getSystemInstruction(settings),
               tools: [{ urlContext: {} }]
@@ -298,7 +307,7 @@ export const generateDeepDiveContent = async (topic: string, history: Message[],
         const ai = new GoogleGenAI({ apiKey: apiKey! });
         const response = await withRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `[DEEP_DIVE] [REFERÊNCIA: ${BOOK_URL}] Explique o assunto: ${topic}. OBRIGATÓRIO: Inclua um diagrama SVG SIMPLES e limpo para ilustrar a explicação de forma rápida.`,
+            contents: `[DEEP_DIVE] [REFERÊNCIA: ${BOOK_URL}] ${settings.repoUrl ? `[FONTE_ADICIONAL: ${settings.repoUrl}]` : ''} Explique o assunto: ${topic}. OBRIGATÓRIO: Inclua um diagrama SVG SIMPLES e limpo para ilustrar a explicação de forma rápida.`,
             config: { 
               systemInstruction: getSystemInstruction(settings),
               tools: [{ urlContext: {} }]
@@ -314,7 +323,7 @@ export const generateLearningPath = async (topic: string, userAnswers: string, c
         const ai = new GoogleGenAI({ apiKey: apiKey! });
         const response = await withRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `[LEARNING_PATH] [REFERÊNCIA: ${BOOK_URL}] 
+            contents: `[LEARNING_PATH] [REFERÊNCIA: ${BOOK_URL}] ${settings.repoUrl ? `[FONTE_ADICIONAL: ${settings.repoUrl}]` : ''} 
             O aluno realizou um desafio sobre o tema: ${topic}.
             Suas respostas foram: ${userAnswers}.
             O gabarito correto e explicações são: ${correctAnswers}.
@@ -342,7 +351,7 @@ export const generateSimulationMission = async (topic: string, settings: Teacher
         const ai = new GoogleGenAI({ apiKey: apiKey! });
         const response = await withRetry(() => ai.models.generateContent({
             model: 'gemini-3-flash-preview',
-            contents: `[SIMULATION] [REFERÊNCIA: ${BOOK_URL}] Gere uma missão de simulação para o Bio Sandbox sobre o tema: ${topic}. 
+            contents: `[SIMULATION] [REFERÊNCIA: ${BOOK_URL}] ${settings.repoUrl ? `[FONTE_ADICIONAL: ${settings.repoUrl}]` : ''} Gere uma missão de simulação para o Bio Sandbox sobre o tema: ${topic}. 
             A missão deve ter um controle deslizante (0-100).
             Retorne um JSON com:
             {
