@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -1393,34 +1394,17 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
 
         let sanitized = line;
 
-        // 1. Colapsar padrões repetitivos e redundantes extremos (ex: IAiI^A iIAi)
-        // Usamos [ \t]* em vez de \s* para garantir que a limpeza fique restrita à mesma linha
-        sanitized = sanitized.replace(/\(?\b(IAi|IBi|ii|IAIA|IBIB|IAIB)\b[ \t]*\$I\^[ABi][^$\n]*?\$?[ \t]*\b(IAi|IBi|ii|IAIA|IBIB|IAIB)\b\)?/gi, (match) => {
-            const latex = match.match(/\$I\^[ABi][^$\n]*?\$/i);
-            return latex ? latex[0] : match;
-        });
+        // REMOVER formatação LaTeX (ex: $I^A i$ -> IAi)
+        // Padrões comuns de alelos em LaTeX
+        sanitized = sanitized.replace(/\$I\^([AB])\s*([ABi])\$/g, 'I$1$2');
+        sanitized = sanitized.replace(/\$I\^([AB])\s*I\^([AB])\$/g, 'I$1I$2');
+        sanitized = sanitized.replace(/\$i\s*i\$/g, 'ii');
+        sanitized = sanitized.replace(/\$([A-Z])\s*([a-z])\$/g, '$1$2');
+        sanitized = sanitized.replace(/\$([A-Z])\s*([A-Z])\$/g, '$1$2');
+        sanitized = sanitized.replace(/\$([a-z])\s*([a-z])\$/g, '$1$2');
 
-        // 2. Redundâncias comuns: "IAi ($I^A i$)" ou "IAi $I^A i$"
-        sanitized = sanitized.replace(/\b(IAi|IBi|ii|IAIA|IBIB|IAIB)\b[ \t]*\(?\$I\^[ABi][^$\n]*?\$?\)?/gi, (match) => {
-            const latex = match.match(/\$I\^[ABi][^$\n]*?\$/i);
-            return latex ? latex[0] : match;
-        });
-
-        // 3. Mapeamento de texto puro remanescente para LaTeX
-        const mapping: Record<string, string> = {
-            'IAi': '$I^A i$',
-            'IBi': '$I^B i$',
-            'ii': '$i i$',
-            'IAIA': '$I^A I^A$',
-            'IBIB': '$I^B I^B$',
-            'IAIB': '$I^A I^B$'
-        };
-
-        Object.entries(mapping).forEach(([raw, latex]) => {
-            // Substitui apenas se não estiver já dentro de um bloco LaTeX
-            const regex = new RegExp(`\\b${raw}\\b(?![^$]*\\$)`, 'g');
-            sanitized = sanitized.replace(regex, latex);
-        });
+        // Remover cifrões remanescentes que possam estar envolvendo alelos simples
+        sanitized = sanitized.replace(/\$([IA|IB|i|A|a|B|b|V|v]+)\$/g, '$1');
 
         return sanitized;
     }).join('\n');
