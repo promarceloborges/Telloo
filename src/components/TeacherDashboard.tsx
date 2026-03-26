@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Save, Book, Target, GraduationCap, FileText, Loader2, Check, Library } from 'lucide-react';
@@ -13,6 +12,7 @@ interface Props {
 
 const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpdate }) => {
   const [isUploading, setIsUploading] = React.useState(false);
+  const [isUploadingInclusion, setIsUploadingInclusion] = React.useState(false);
 
   const handleChange = (field: keyof TeacherSettings, value: any) => {
     onUpdate({ ...settings, [field]: value });
@@ -25,11 +25,13 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
     }
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'general' | 'inclusion') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setIsUploading(true);
+    if (type === 'general') setIsUploading(true);
+    else setIsUploadingInclusion(true);
+
     try {
       let content = '';
       if (file.type === 'application/pdf') {
@@ -59,22 +61,32 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
         content = await file.text();
       }
 
-      onUpdate({
-        ...settings,
-        pdfContent: content,
-        pdfName: file.name
-      });
-
-      // Disparar mensagem de sucesso no chat
-      window.dispatchEvent(new CustomEvent('telloo_system_message', { 
-        detail: `O arquivo **${file.name}** foi recebido e processado com sucesso! 📄✅\n\nJá integrei esse material ao meu núcleo de conhecimento.` 
-      }));
+      if (type === 'general') {
+        onUpdate({
+          ...settings,
+          pdfContent: content,
+          pdfName: file.name
+        });
+        window.dispatchEvent(new CustomEvent('telloo_system_message', { 
+          detail: `O arquivo **${file.name}** foi recebido e processado com sucesso! 📄✅\n\nJá integrei esse material ao meu núcleo de conhecimento.` 
+        }));
+      } else {
+        onUpdate({
+          ...settings,
+          inclusionPdfContent: content,
+          inclusionPdfName: file.name
+        });
+        window.dispatchEvent(new CustomEvent('telloo_system_message', { 
+          detail: `Recebi os **Perfis de Inclusão** do arquivo **${file.name}**! ♿📚✅\n\nAgora estou preparado para adaptar todas as atividades e explicações para as necessidades específicas dos seus alunos.` 
+        }));
+      }
 
     } catch (error) {
       console.error("Erro ao ler arquivo:", error);
       alert("Erro ao ler o arquivo. Tente um formato de texto simples.");
     } finally {
-      setIsUploading(false);
+      if (type === 'general') setIsUploading(false);
+      else setIsUploadingInclusion(false);
     }
   };
 
@@ -199,7 +211,7 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
                   <input
                     type="file"
                     accept=".txt,.pdf,.docx"
-                    onChange={handleFileUpload}
+                    onChange={(e) => handleFileUpload(e, 'general')}
                     className="hidden"
                     id="file-upload"
                     disabled={isUploading}
@@ -237,6 +249,54 @@ const TeacherDashboard: React.FC<Props> = ({ isOpen, setIsOpen, settings, onUpda
                   )}
                 </div>
                 <p className="text-[10px] text-gray-500 text-center">Suporta arquivos de até 20MB</p>
+              </div>
+
+              <div className="space-y-4">
+                <label className="text-[13px] font-bold text-telloo-neonBlue uppercase tracking-widest flex items-center gap-2">
+                  <Target size={14} /> Perfis de Inclusão (Alunos com Deficiência)
+                </label>
+                <div className="relative">
+                  <input
+                    type="file"
+                    accept=".txt,.pdf,.docx"
+                    onChange={(e) => handleFileUpload(e, 'inclusion')}
+                    className="hidden"
+                    id="inclusion-upload"
+                    disabled={isUploadingInclusion}
+                  />
+                  <label
+                    htmlFor="inclusion-upload"
+                    className={`flex items-center justify-center gap-2 w-full bg-slate-800 border border-dashed rounded-xl p-6 cursor-pointer transition-all group ${isUploadingInclusion ? 'opacity-50 cursor-wait border-white/20' : (settings.inclusionPdfName ? 'border-telloo-neonBlue/50 bg-telloo-neonBlue/5' : 'border-white/20 hover:border-telloo-neonBlue')}`}
+                  >
+                    <div className="text-center">
+                      {isUploadingInclusion ? (
+                        <Loader2 className="mx-auto mb-2 text-telloo-neonBlue animate-spin" />
+                      ) : settings.inclusionPdfName ? (
+                        <div className="flex flex-col items-center">
+                          <Check className="mx-auto mb-2 text-telloo-neonBlue" />
+                          <span className="text-[11px] text-telloo-neonBlue font-bold uppercase tracking-tighter mb-1">Perfis integrados!</span>
+                        </div>
+                      ) : (
+                        <Target className="mx-auto mb-2 text-gray-500 group-hover:text-telloo-neonBlue transition-colors" />
+                      )}
+                      <span className={`text-[13px] font-bold ${settings.inclusionPdfName && !isUploadingInclusion ? 'text-white' : 'text-gray-400 group-hover:text-white'}`}>
+                        {isUploadingInclusion ? 'Processando perfis...' : (settings.inclusionPdfName || 'Anexar características dos alunos')}
+                      </span>
+                    </div>
+                  </label>
+                  {settings.inclusionPdfName && !isUploadingInclusion && (
+                    <button 
+                      onClick={() => {
+                        handleChange('inclusionPdfContent', '');
+                        handleChange('inclusionPdfName', '');
+                      }}
+                      className="absolute top-2 right-2 p-1 bg-red-500/20 text-red-400 rounded-full hover:bg-red-500/40 transition-all"
+                    >
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+                <p className="text-[10px] text-gray-500 text-center italic">Este material terá prioridade máxima para adaptação pedagógica.</p>
               </div>
             </div>
 
