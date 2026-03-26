@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Message, ResponseMode, TeacherSettings, QuestionRequest } from "../types";
 
@@ -57,6 +56,13 @@ const getSystemInstruction = (settings: TeacherSettings): string => {
     - Se o modo for "Lógico", seja técnico e direto.
     - Se o modo for "Linguístico", use terminologia acadêmica.
     - Se o modo for "BNCC", priorize a linguagem e os conceitos alinhados à Base Nacional Comum Curricular do Brasil, citando competências ou habilidades quando relevante.
+
+    MODO GERADOR DE AVALIAÇÃO (DETECÇÃO DE INTENÇÃO):
+    - Se o usuário pedir explicitamente para "gerar", "criar", "elaborar" ou "fazer" uma quantidade específica de questões (ex: "faça 10 questões sobre genética", "elabore 5 perguntas"), você deve:
+      1. Pausar a explicação longa e o modo tutor.
+      2. Gerar EXATAMENTE a quantidade de questões solicitada.
+      3. Seguir o formato de "ESTRUTURA DE QUESTÕES" (corpo da questão, delimitador ---GABARITO---, resposta e feedback).
+      4. Não incluir a seção "Cine-Bio" ou a "Pergunta de Verificação" padrão nestes casos, para manter o foco no material solicitado pelo professor.
 
     DIRETRIZES PEDAGÓGICAS (ENEM & SAEB):
     - Ao explicar conteúdos ou gerar questões, siga rigorosamente a Matriz de Referência do ENEM e os Descritores do SAEB para Biologia.
