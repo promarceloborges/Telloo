@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import LandingPage from './components/LandingPage';
 import ChatInterface from './components/ChatInterface';
@@ -45,6 +44,8 @@ function App() {
       bnccFocus: true,
       pdfContent: '',
       pdfName: '',
+      inclusionPdfContent: '',
+      inclusionPdfName: '',
       repoUrl: ''
     };
   });
@@ -56,6 +57,10 @@ function App() {
         const content = await BioStorage.getLargeContent('current_pdf_content');
         if (content) {
           setTeacherSettings(prev => ({ ...prev, pdfContent: content }));
+        }
+        const inclusionContent = await BioStorage.getLargeContent('inclusion_pdf_content');
+        if (inclusionContent) {
+          setTeacherSettings(prev => ({ ...prev, inclusionPdfContent: inclusionContent }));
         }
       } catch (e) {
         console.error("Erro ao carregar conteúdo do IndexedDB:", e);
@@ -86,8 +91,14 @@ function App() {
         BioStorage.clearLargeContent('current_pdf_content');
       }
 
+      if (teacherSettings.inclusionPdfContent) {
+        BioStorage.saveLargeContent('inclusion_pdf_content', teacherSettings.inclusionPdfContent);
+      } else {
+        BioStorage.clearLargeContent('inclusion_pdf_content');
+      }
+
       // Salvar o restante no localStorage (removendo o conteúdo pesado para não estourar limite)
-      const { pdfContent, ...rest } = teacherSettings;
+      const { pdfContent, inclusionPdfContent, ...rest } = teacherSettings;
       localStorage.setItem('telloo_teacher_settings', JSON.stringify(rest));
     } catch (e) {
       console.error("Erro ao salvar configurações:", e);
