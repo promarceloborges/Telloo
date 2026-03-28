@@ -1,11 +1,10 @@
-
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { Message, ResponseMode, TeacherSettings, QuestionType } from '../types';
 import { streamMessageToGemini, streamQuestions, generateDeepDiveContent, generateSimulationMission, generateLearningPath } from '../services/geminiService';
 import Mascot from './Mascot';
-import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap, Mic, MessageCircle, LogOut, MoreVertical, Maximize2, Minimize2 } from 'lucide-react';
+import { Send, Brain, Palette, Microscope, BookOpen, Sparkles, X, Target, Library, Share2, ChevronRight, Zap, FileText, Eraser, MapPin, Bookmark, Loader2, Download, Settings, Beaker, Sliders, Play, RotateCcw, Activity, Info, AlertTriangle, ClipboardCheck, Copy, Check, Eye, EyeOff, RefreshCw, GraduationCap, Mic, MessageCircle, LogOut, MoreVertical, Maximize2, Minimize2, Menu } from 'lucide-react';
 import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -1793,7 +1792,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
             {/* Mascote com Círculo/Portal */}
             <div className="relative group shrink-0">
                     <div className="absolute inset-0 bg-gradient-to-br from-telloo-neonGreen/20 to-telloo-neonBlue/20 rounded-full blur-md group-hover:blur-lg transition-all duration-500"></div>
-                    <div className="relative w-14 h-14 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center shadow-inner overflow-hidden">
+                    <div className="relative w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-slate-800 border border-white/10 flex items-center justify-center shadow-inner overflow-hidden">
                         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-telloo-neonGreen/5 via-transparent to-transparent"></div>
                         <Mascot size="md" animated={isLoading} />
                     </div>
@@ -1808,9 +1807,9 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
 
                 <div className="flex-1 flex flex-col min-w-0">
                     <div className="flex justify-between items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <h1 className="font-display font-bold text-telloo-neonGreen tracking-tighter leading-none text-[24px]">TELLOO</h1>
-                            <span className="text-[8px] bg-white/5 px-2 py-0.5 rounded-full text-gray-500 font-bold uppercase tracking-widest border border-white/5 whitespace-nowrap">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                            <h1 className="font-display font-bold text-telloo-neonGreen tracking-tighter leading-none text-[18px] sm:text-[24px]">TELLOO</h1>
+                            <span className="text-[7px] sm:text-[8px] bg-white/5 px-1.5 sm:px-2 py-0.5 rounded-full text-gray-500 font-bold uppercase tracking-widest border border-white/5 whitespace-nowrap">
                                 ENEM/SAEB
                             </span>
                         </div>
@@ -1868,7 +1867,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                                     onClick={() => setIsHeaderMenuOpen(!isHeaderMenuOpen)} 
                                     className={`p-2 transition-all rounded-xl border ${isHeaderMenuOpen ? 'bg-telloo-neonGreen/10 border-telloo-neonGreen/50 text-telloo-neonGreen shadow-[0_0_15px_rgba(0,255,157,0.1)]' : 'bg-white/5 border-white/10 text-gray-400 hover:text-telloo-neonGreen hover:border-telloo-neonGreen/30'}`}
                                 >
-                                    <MoreVertical size={18} />
+                                    <Menu size={18} />
                                 </button>
                                 
                                 {isHeaderMenuOpen && (
@@ -1953,3 +1952,4 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
 };
 
 export default ChatInterface;
+
