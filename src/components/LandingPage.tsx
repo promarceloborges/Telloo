@@ -30,7 +30,7 @@ const LandingPage: React.FC<Props> = ({ onEnter }) => {
         </div>
         
         <div className="space-y-2">
-          <h1 className="text-[49px] font-display font-bold text-telloo-neonGreen tracking-tighter">
+          <h1 className="text-[49px] font-display font-bold text-telloo-neonGreen neon-green tracking-tighter">
             TELLOO
           </h1>
           <p className="text-gray-400 text-[15px] uppercase tracking-[0.3em] font-bold">
@@ -45,7 +45,7 @@ const LandingPage: React.FC<Props> = ({ onEnter }) => {
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Qual seu nome, estudante?"
-              className="w-full bg-slate-900 border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-telloo-neonGreen transition-colors"
+              className="w-full bg-slate-900/50 backdrop-blur-md border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-telloo-neonGreen focus:neon-border-green transition-all"
               autoFocus
             />
           </div>
@@ -53,7 +53,7 @@ const LandingPage: React.FC<Props> = ({ onEnter }) => {
           <button
             type="submit"
             disabled={!name.trim()}
-            className="w-full bg-telloo-neonGreen text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100"
+            className="w-full bg-telloo-neonGreen/90 backdrop-blur-sm text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:hover:scale-100 shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] border border-telloo-neonGreen/20"
           >
             INICIAR JORNADA <ChevronRight size={20} />
           </button>
