@@ -17,7 +17,7 @@ export default {
           dark: '#0f172a',
           glass: 'rgba(255, 255, 255, 0.1)',
           neonBlue: '#00f0ff',
-          neonGreen: '#00ff9d',
+          neonGreen: '#10b981',
           surface: '#1e293b',
         }
       },
@@ -34,7 +34,7 @@ export default {
         },
         'pulse-glow': {
           '0%, 100%': { boxShadow: '0 0 20px rgba(0, 240, 255, 0.2)' },
-          '50%': { boxShadow: '0 0 40px rgba(0, 255, 157, 0.4)' },
+          '50%': { boxShadow: '0 0 40px rgba(16, 185, 129, 0.4)' },
         },
         fadeIn: {
           '0%': { opacity: '0', transform: 'translateY(10px)' },
