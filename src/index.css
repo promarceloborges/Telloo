@@ -22,8 +22,25 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+.glass-green {
+  background: rgba(6, 78, 59, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.05);
+}
+
 .neon-text {
-  text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.neon-green {
+  text-shadow: 0 0 8px rgba(16, 185, 129, 0.6), 0 0 15px rgba(16, 185, 129, 0.2);
+}
+
+.neon-border-green {
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.2), inset 0 0 5px rgba(16, 185, 129, 0.1);
+  border-color: rgba(16, 185, 129, 0.3) !important;
 }
 
 ::-webkit-scrollbar {
@@ -35,12 +52,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 255, 157, 0.3);
+  background: rgba(16, 185, 129, 0.3);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 255, 157, 0.5);
+  background: rgba(16, 185, 129, 0.5);
 }
 
 /* Estilos de Impressão (PDF) */
@@ -57,6 +74,7 @@
     background: white !important;
     color: black !important;
     font-family: 'Segoe UI', Arial, sans-serif !important;
+    font-weight: 500 !important;
     margin: 0 !important;
     padding: 0 !important;
     height: auto !important;
@@ -92,21 +110,47 @@
     color: black !important;
     max-width: none !important;
     font-size: 12pt !important;
+    font-weight: 500 !important;
   }
   .markdown-container h1, .markdown-container h2, .markdown-container h3 {
     color: black !important;
+    font-weight: 700 !important;
     page-break-after: avoid;
   }
   .markdown-container p, .markdown-container ul, .markdown-container ol {
     orphans: 3;
     widows: 3;
+    opacity: 1 !important;
   }
   svg {
-    filter: grayscale(1) brightness(0.2) !important;
+    filter: grayscale(1) brightness(0.1) contrast(2) !important;
     max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    margin: 1cm auto !important;
+    page-break-inside: avoid !important;
+  }
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    margin: 1cm auto !important;
+    page-break-inside: avoid !important;
+    border-radius: 8px !important;
+  }
+  .markdown-container div {
+    overflow: visible !important;
   }
   .markdown-container blockquote {
-    border-left: 2px solid #ccc !important;
-    background: #f9f9f9 !important;
+    border-left: 3px solid #000 !important;
+    background: #f0f0f0 !important;
+  }
+  table, th, td {
+    border: 1px solid #000 !important;
+    color: black !important;
+  }
+  th {
+    background-color: #f0f0f0 !important;
+    font-weight: 700 !important;
   }
 }
