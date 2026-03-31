@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
@@ -223,7 +224,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
         objective: "Equilibre a salinidade para restaurar a pressão interna da célula.",
         controlName: "Concentração Salina",
         unit: "g/L",
-        color: (v: number) => v > 65 ? "#ef4444" : v < 35 ? "#3b82f6" : "#00ff9d",
+        color: (v: number) => v > 65 ? "#ef4444" : v < 35 ? "#3b82f6" : "#10b981",
         getLog: (v: number) => v > 65 ? "⚠️ PLASMÓLISE: Salinidade crítica! A membrana está se soltando da parede celular." : v < 35 ? "💧 TURGIDEZ MÁXIMA: A célula está absorvendo água intensamente." : "✅ ESTÁVEL: Meio isotônico alcançado."
       },
       {
@@ -233,7 +234,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
         objective: "Ajuste a tonicidade do meio para evitar a lise celular.",
         controlName: "Tonicidade do Meio",
         unit: "% NaCl",
-        color: (v: number) => v < 20 ? "#ef4444" : v > 80 ? "#3b82f6" : "#00ff9d",
+        color: (v: number) => v < 20 ? "#ef4444" : v > 80 ? "#3b82f6" : "#10b981",
         getLog: (v: number) => v < 20 ? "💥 LISE: A pressão osmótica rompeu a membrana plasmática das hemácias!" : v > 80 ? "🍂 CRENAL: As células murcharam devido à saída de água." : "✅ CONSERVAÇÃO: Forma biconcava mantida em soro fisiológico."
       },
       {
@@ -243,7 +244,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
         objective: "Encontre o nível de desidratação osmótica ideal para conservação.",
         controlName: "Nível de Salga",
         unit: "kg/ton",
-        color: (v: number) => v < 40 ? "#facc15" : "#00ff9d",
+        color: (v: number) => v < 40 ? "#facc15" : "#10b981",
         getLog: (v: number) => v < 40 ? "🦠 CONTAMINAÇÃO: Pressão osmótica insuficiente para inibir patógenos." : "🥩 CONSERVADO: Plasmólise bacteriana induzida com sucesso. Alimento seguro."
       }
     ],
@@ -371,7 +372,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                 color: (v: number) => {
                     if (v < (mission.thresholds?.low?.value || 30)) return mission.thresholds?.low?.color || "#ef4444";
                     if (v > (mission.thresholds?.high?.value || 70)) return mission.thresholds?.high?.color || "#3b82f6";
-                    return mission.thresholds?.optimal?.color || "#00ff9d";
+                    return mission.thresholds?.optimal?.color || "#10b981";
                 },
                 getLog: (v: number) => {
                     if (v < (mission.thresholds?.low?.value || 30)) return mission.thresholds?.low?.message;
@@ -467,7 +468,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
             setIsLoading(true);
             const canvas = await html2canvas(element, {
                 backgroundColor: '#ffffff',
-                scale: 2,
+                scale: 3,
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
@@ -478,7 +479,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                     if (el) {
                         // Estilo de Folha Limpa
                         el.style.backgroundColor = '#ffffff';
-                        el.style.color = '#1a1a1a';
+                        el.style.color = '#000000';
+                        el.style.fontWeight = '500';
                         el.style.padding = '60px 60px 80px 60px'; // Aumentado o padding inferior
                         el.style.borderRadius = '0';
                         el.style.border = 'none';
@@ -487,18 +489,20 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                         el.style.minHeight = 'auto';
                         el.style.overflow = 'visible';
 
-                        // Ajustar todo o texto para preto/cinza escuro
+                        // Ajustar todo o texto para preto absoluto
                         const textElements = el.querySelectorAll('p, span, li, div, h1, h2, h3, strong');
                         textElements.forEach((node: any) => {
-                            node.style.color = '#1a1a1a';
+                            node.style.color = '#000000';
                             node.style.backgroundColor = 'transparent';
                             node.style.textShadow = 'none';
+                            node.style.opacity = '1';
                         });
 
-                        // Títulos em verde escuro profissional
+                        // Títulos em preto para máximo contraste
                         el.querySelectorAll('h1, h2, h3').forEach((h: any) => {
-                            h.style.color = '#064e3b';
-                            h.style.borderBottom = '1px solid #eee';
+                            h.style.color = '#000000';
+                            h.style.fontWeight = '700';
+                            h.style.borderBottom = '2px solid #000';
                         });
 
                         // Ajustar imagens para garantir que não sejam cortadas
@@ -514,20 +518,18 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                         el.querySelectorAll('svg').forEach((svg: any) => {
                             svg.style.display = 'block';
                             svg.style.margin = '30px auto';
-                            svg.style.backgroundColor = '#fcfcfc';
-                            svg.style.border = '1px solid #eee';
+                            svg.style.backgroundColor = '#ffffff';
+                            svg.style.border = '1px solid #000';
                             svg.style.padding = '20px';
                             svg.style.borderRadius = '12px';
                             svg.style.filter = 'none';
                             
-                            // Converter cores neon para cores de impressão
+                            // Converter cores neon para cores de impressão (preto/cinza escuro)
                             svg.querySelectorAll('text, path, circle, rect, line').forEach((p: any) => {
-                                const stroke = p.getAttribute('stroke');
-                                const fill = p.getAttribute('fill');
-                                if (stroke === '#00ff9d' || stroke === 'rgb(0, 255, 157)') p.setAttribute('stroke', '#059669');
-                                if (fill === '#00ff9d' || fill === 'rgb(0, 255, 157)') p.setAttribute('fill', '#059669');
-                                if (stroke === '#00e5ff') p.setAttribute('stroke', '#0369a1');
-                                if (fill === '#00e5ff') p.setAttribute('fill', '#0369a1');
+                                p.setAttribute('stroke', '#000000');
+                                if (p.getAttribute('fill') && p.getAttribute('fill') !== 'none') {
+                                    p.setAttribute('fill', '#333333');
+                                }
                             });
                         });
 
@@ -547,10 +549,10 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                                         Gerado em ${new Date().toLocaleString('pt-BR')}
                                     </div>
                                 </div>
-                                <div style="text-align: center; font-weight: bold; color: #064e3b; font-size: 16px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px;">
+                                <div style="text-align: center; font-weight: bold; color: #000000; font-size: 16px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px;">
                                     TELLOO
                                 </div>
-                                <div style="text-align: center; font-weight: bold; color: #064e3b; font-size: 16px; text-transform: uppercase; letter-spacing: 2px;">
+                                <div style="text-align: center; font-weight: bold; color: #000000; font-size: 16px; text-transform: uppercase; letter-spacing: 2px;">
                                     FICHA DE ESTUDO
                                 </div>
                             </div>
@@ -561,10 +563,10 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                         const footer = clonedDoc.createElement('div');
                         footer.style.marginTop = '40px';
                         footer.style.paddingTop = '10px';
-                        footer.style.borderTop = '1px solid #eee';
+                        footer.style.borderTop = '2px solid #000';
                         footer.style.textAlign = 'center';
                         footer.style.fontSize = '9px';
-                        footer.style.color = '#999';
+                        footer.style.color = '#000';
                         footer.style.fontFamily = 'sans-serif';
                         footer.innerHTML = `Telloo • Inteligência Biológica • ${new Date().toLocaleString('pt-BR')}`;
                         el.appendChild(footer);
@@ -576,10 +578,10 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'px',
-                format: [canvas.width / 2, canvas.height / 2]
+                format: [canvas.width / 3, canvas.height / 3]
             });
 
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2, undefined, 'FAST');
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3, undefined, 'MEDIUM');
             
             if (format === 'whatsapp') {
                 const pdfBlob = pdf.output('blob');
@@ -754,7 +756,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
         try {
             const canvas = await html2canvas(element, {
                 backgroundColor: '#ffffff',
-                scale: 2,
+                scale: 3,
                 useCORS: true,
                 allowTaint: true,
                 logging: false,
@@ -765,7 +767,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                     if (el) {
                         // Estilo de Relatório Limpo
                         el.style.backgroundColor = '#ffffff';
-                        el.style.color = '#1a1a1a';
+                        el.style.color = '#000000';
+                        el.style.fontWeight = '500';
                         el.style.padding = '60px 60px 100px 60px'; // Aumentado o padding inferior
                         el.style.height = 'auto';
                         el.style.overflow = 'visible';
@@ -774,9 +777,9 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                         const messages = el.querySelectorAll('[id^="msg-content-"]');
                         messages.forEach((msg: any) => {
                             msg.style.backgroundColor = '#ffffff';
-                            msg.style.color = '#1a1a1a';
+                            msg.style.color = '#000000';
                             msg.style.border = 'none';
-                            msg.style.borderBottom = '1px solid #eee';
+                            msg.style.borderBottom = '2px solid #000';
                             msg.style.marginBottom = '30px';
                             msg.style.padding = '20px 0';
                             msg.style.boxShadow = 'none';
@@ -785,13 +788,15 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                             
                             // Ajustar textos internos
                             msg.querySelectorAll('p, span, li, h1, h2, h3, strong').forEach((node: any) => {
-                                node.style.color = '#1a1a1a';
+                                node.style.color = '#000000';
                                 node.style.textShadow = 'none';
+                                node.style.opacity = '1';
                             });
 
                             // Títulos
                             msg.querySelectorAll('h1, h2, h3').forEach((h: any) => {
-                                h.style.color = '#064e3b';
+                                h.style.color = '#000000';
+                                h.style.fontWeight = '700';
                             });
 
                             // Ajustar imagens
@@ -807,16 +812,16 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                             msg.querySelectorAll('svg').forEach((svg: any) => {
                                 svg.style.display = 'block';
                                 svg.style.filter = 'none';
-                                svg.style.backgroundColor = '#fcfcfc';
-                                svg.style.border = '1px solid #eee';
+                                svg.style.backgroundColor = '#ffffff';
+                                svg.style.border = '1px solid #000';
                                 svg.style.padding = '15px';
                                 svg.style.borderRadius = '12px';
                                 
                                 svg.querySelectorAll('text, path, circle, rect, line').forEach((p: any) => {
-                                    const stroke = p.getAttribute('stroke');
-                                    const fill = p.getAttribute('fill');
-                                    if (stroke === '#00ff9d' || stroke === 'rgb(0, 255, 157)') p.setAttribute('stroke', '#059669');
-                                    if (fill === '#00ff9d' || fill === 'rgb(0, 255, 157)') p.setAttribute('fill', '#059669');
+                                    p.setAttribute('stroke', '#000000');
+                                    if (p.getAttribute('fill') && p.getAttribute('fill') !== 'none') {
+                                        p.setAttribute('fill', '#333333');
+                                    }
                                 });
                             });
                         });
@@ -836,13 +841,13 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                                         Data: ${new Date().toLocaleDateString('pt-BR')}
                                     </div>
                                 </div>
-                                <div style="text-align: center; font-weight: bold; color: #064e3b; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">
+                                <div style="text-align: center; font-weight: bold; color: #000000; font-size: 22px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 8px;">
                                     TELLOO
                                 </div>
-                                <div style="text-align: center; font-weight: bold; color: #064e3b; font-size: 22px; text-transform: uppercase; letter-spacing: 2px;">
+                                <div style="text-align: center; font-weight: bold; color: #000000; font-size: 22px; text-transform: uppercase; letter-spacing: 2px;">
                                     RELATÓRIO DE ESTUDO
                                 </div>
-                                <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                                <div style="margin-top: 15px; font-size: 12px; color: #000;">
                                     <span>Tópico: ${currentTopic || 'Biologia'}</span>
                                 </div>
                             </div>
@@ -853,10 +858,10 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                         const footer = clonedDoc.createElement('div');
                         footer.style.marginTop = '50px';
                         footer.style.paddingTop = '15px';
-                        footer.style.borderTop = '1px solid #eee';
+                        footer.style.borderTop = '2px solid #000';
                         footer.style.textAlign = 'center';
                         footer.style.fontSize = '10px';
-                        footer.style.color = '#999';
+                        footer.style.color = '#000';
                         footer.style.fontFamily = 'sans-serif';
                         footer.innerHTML = `Telloo • Inteligência Biológica • ${new Date().toLocaleString('pt-BR')}`;
                         el.appendChild(footer);
@@ -868,10 +873,10 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
             const pdf = new jsPDF({
                 orientation: 'portrait',
                 unit: 'px',
-                format: [canvas.width / 2, canvas.height / 2]
+                format: [canvas.width / 3, canvas.height / 3]
             });
 
-            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 2, canvas.height / 2, undefined, 'FAST');
+            pdf.addImage(imgData, 'PNG', 0, 0, canvas.width / 3, canvas.height / 3, undefined, 'MEDIUM');
             
             if (format === 'whatsapp') {
                 const pdfBlob = pdf.output('blob');
@@ -1197,7 +1202,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
             <div key={`${letter}-${qIdx}`} className="mb-3">
                 <div 
                     onClick={() => selectOption(msgId, qIdx, normalizedLetter)} 
-                    className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer group/opt ${isSelected ? (isCorrect ? 'bg-telloo-neonGreen/10 border-telloo-neonGreen shadow-[0_0_15px_rgba(0,255,157,0.2)]' : 'bg-red-500/10 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]') : 'bg-white/5 border-white/10 hover:border-white/30'}`}
+                    className={`flex items-start gap-3 p-3 rounded-xl border transition-all cursor-pointer group/opt ${isSelected ? (isCorrect ? 'bg-telloo-neonGreen/10 border-telloo-neonGreen shadow-[0_0_15px_rgba(0,255,157,0.2)] neon-border-green' : 'bg-red-500/10 border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.2)]') : 'bg-white/5 border-white/10 hover:border-white/30'}`}
                 >
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center shrink-0 transition-all font-bold text-[11px] uppercase ${isSelected ? (isCorrect ? 'bg-telloo-neonGreen border-telloo-neonGreen text-black' : 'bg-red-500 border-red-500 text-white') : 'border-white/30 text-gray-400 group-hover/opt:border-telloo-neonBlue/50'}`}>
                         {letter}
@@ -1209,7 +1214,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                     <motion.div 
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className={`mt-2 ml-9 p-3 rounded-lg border text-[13px] leading-relaxed ${isCorrect ? 'bg-telloo-neonGreen/5 border-telloo-neonGreen/20 text-telloo-neonGreen' : 'bg-red-500/5 border-red-500/20 text-red-400'}`}
+                        className={`mt-2 ml-9 p-3 rounded-lg border text-[13px] leading-relaxed ${isCorrect ? 'glass-green border-telloo-neonGreen/20 text-telloo-neonGreen neon-green' : 'bg-red-500/5 border-red-500/20 text-red-400'}`}
                     >
                         <div className="flex items-center gap-2 mb-1 font-bold uppercase tracking-widest text-[10px]">
                             {isCorrect ? <><Sparkles size={12}/> Bio-Acerto!</> : <><Info size={12}/> Bio-Insight:</>}
@@ -1224,7 +1229,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
     const isDrawer = msgId === 'drawer';
 
     return {
-      h1: (props: any) => <h1 className={`${isDrawer ? 'text-[24px] sm:text-[28px]' : 'text-[20px] sm:text-[22px]'} font-display font-bold text-telloo-neonGreen mt-6 mb-4 border-b border-telloo-neonGreen/20 pb-2 print:text-black print:border-black`} {...props} />,
+      h1: (props: any) => <h1 className={`${isDrawer ? 'text-[24px] sm:text-[28px]' : 'text-[20px] sm:text-[22px]'} font-display font-bold text-telloo-neonGreen neon-green mt-6 mb-4 border-b border-telloo-neonGreen/20 pb-2 print:text-black print:border-black`} {...props} />,
       h2: (props: any) => <h2 className={`${isDrawer ? 'text-[20px] sm:text-[24px]' : 'text-[18px] sm:text-[20px]'} font-semibold text-white mt-6 mb-3 print:text-black`} {...props} />,
       h3: (props: any) => <h3 className={`${isDrawer ? 'text-[18px] sm:text-[20px]' : 'text-[16px] sm:text-[18px]'} font-medium text-telloo-neonBlue mt-4 mb-2 print:text-black`} {...props} />,
       p: (props: any) => {
@@ -1281,7 +1286,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
           );
       },
       strong: (props: any) => (
-        <strong className="text-telloo-neonGreen font-bold">
+        <strong className="text-telloo-neonGreen neon-green font-bold">
           {React.Children.map(props.children, child => {
             if (typeof child === 'string') return wrapWithGlossary(child);
             return child;
@@ -1305,7 +1310,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                       href={props.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 mt-2 px-5 py-2.5 bg-telloo-neonGreen text-black text-[11px] font-bold uppercase tracking-widest rounded-xl hover:scale-105 hover:shadow-[0_0_20px_rgba(0,255,157,0.4)] transition-all no-underline group/btn"
+                      className="inline-flex items-center gap-2 mt-2 px-5 py-2.5 bg-telloo-neonGreen/90 backdrop-blur-sm text-black text-[11px] font-bold uppercase tracking-widest rounded-xl hover:scale-105 hover:shadow-[0_0_25px_rgba(0,255,157,0.6)] transition-all no-underline group/btn border border-telloo-neonGreen/30 shadow-[0_0_15px_rgba(0,255,157,0.3)]"
                   >
                       <Play size={14} fill="currentColor" className="group-hover/btn:animate-pulse" />
                       Assistir: {label}
@@ -1318,8 +1323,8 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
         const content = String(children);
         if (!inline && content.trim().startsWith('<svg')) {
           return (
-            <div className="my-6 p-4 bg-black/40 rounded-2xl border border-telloo-neonGreen/20 shadow-[0_0_15px_rgba(0,255,157,0.1)] overflow-hidden print:bg-white print:border-black print:shadow-none">
-              <div className="text-[10px] text-telloo-neonGreen/50 uppercase tracking-[0.2em] font-bold mb-3 flex items-center justify-between print:text-black print:border-b print:mb-2">
+            <div className="my-6 p-4 glass-green rounded-2xl overflow-hidden print:bg-white print:border-black print:shadow-none print:overflow-visible">
+              <div className="text-[10px] text-telloo-neonGreen/70 neon-green uppercase tracking-[0.2em] font-bold mb-3 flex items-center justify-between print:text-black print:border-b print:mb-2">
                   <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 bg-telloo-neonGreen rounded-full animate-pulse print:hidden"></div>
                       Diagrama Biológico
@@ -1334,9 +1339,9 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
       svg: ({node, children, ...props}: any) => {
           const { inline, ...cleanProps } = props;
           return (
-              <div className="my-6 p-4 bg-black/40 rounded-2xl border border-telloo-neonGreen/20 shadow-[0_0_15px_rgba(0,255,157,0.1)] overflow-hidden relative group print:bg-white print:border-black print:shadow-none">
+              <div className="my-6 p-4 glass-green rounded-2xl overflow-hidden relative group print:bg-white print:border-black print:shadow-none print:overflow-visible">
                   <div className="flex justify-center items-center w-full min-h-[100px] print:filter-none">
-                      <svg xmlns="http://www.w3.org/2000/svg" {...cleanProps} style={{ maxWidth: '100%', height: 'auto', display: 'block' }} className="drop-shadow-[0_0_10px_rgba(0,255,157,0.2)] print:drop-shadow-none">
+                      <svg xmlns="http://www.w3.org/2000/svg" {...cleanProps} style={{ maxWidth: '100%', height: 'auto', display: 'block' }} className="drop-shadow-[0_0_15px_rgba(0,255,157,0.4)] print:drop-shadow-none">
                           {children}
                       </svg>
                   </div>
@@ -1351,19 +1356,19 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
         />
       ),
       table: ({ children }: any) => (
-        <div className="my-6 overflow-x-auto rounded-xl border border-white/10 glass-panel shadow-2xl print:border-black print:shadow-none">
+        <div className="my-6 overflow-x-auto rounded-xl glass-green shadow-2xl print:border-black print:shadow-none">
           <table className="w-full border-collapse text-left text-[14px]">
             {children}
           </table>
         </div>
       ),
       thead: ({ children }: any) => (
-        <thead className="bg-telloo-neonGreen/10 border-b border-telloo-neonGreen/20">
+        <thead className="bg-telloo-neonGreen/20 border-b border-telloo-neonGreen/30">
           {children}
         </thead>
       ),
       th: ({ children }: any) => (
-        <th className="p-4 font-display font-bold text-telloo-neonGreen uppercase tracking-widest text-[11px] print:text-black">
+        <th className="p-4 font-display font-bold text-telloo-neonGreen neon-green uppercase tracking-widest text-[11px] print:text-black">
           {children}
         </th>
       ),
@@ -1519,11 +1524,11 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
 
             {answerKey && !msg.isStreaming && (
                 <div className="mt-6 space-y-4 print:mt-10">
-                    <button onClick={() => toggleAnswer(msg.id)} className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-telloo-neonGreen/30 text-telloo-neonGreen text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-telloo-neonGreen/10 transition-all print:hidden">
+                    <button onClick={() => toggleAnswer(msg.id)} className="flex items-center gap-2 px-4 py-2 bg-slate-800/50 border border-telloo-neonGreen/30 text-telloo-neonGreen text-[10px] font-bold uppercase tracking-widest rounded-lg hover:bg-telloo-neonGreen/10 transition-all neon-border-green print:hidden">
                         {isAnswerRevealed ? <><EyeOff size={14}/> Esconder Gabarito</> : <><Eye size={14}/> Ver Gabarito Comentado</>}
                     </button>
                     {(isAnswerRevealed || window.matchMedia('print').matches) && (
-                        <div className="bg-telloo-neonGreen/5 border-l-4 border-telloo-neonGreen p-5 rounded-r-xl animate-fade-in print:bg-white print:border-black print:p-2">
+                        <div className="glass-green border-l-4 border-telloo-neonGreen p-5 rounded-r-xl animate-fade-in print:bg-white print:border-black print:p-2">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2 text-telloo-neonGreen print:text-black">
                                     <ClipboardCheck size={18}/>
@@ -1584,7 +1589,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        <button onClick={() => handleGenerateAssessment('Objetiva')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonGreen/10 border border-telloo-neonGreen/30 rounded-xl text-[10px] font-bold text-telloo-neonGreen uppercase tracking-widest hover:bg-telloo-neonGreen/20 transition-all"><Target size={14}/> Desafio</button>
+                        <button onClick={() => handleGenerateAssessment('Objetiva')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonGreen/10 border border-telloo-neonGreen/30 rounded-xl text-[10px] font-bold text-telloo-neonGreen uppercase tracking-widest hover:bg-telloo-neonGreen/20 transition-all neon-border-green"><Target size={14}/> Desafio</button>
                         <button onClick={handleOpenDeepDive} className="flex items-center justify-center gap-2 p-3 bg-slate-800 border border-slate-700 rounded-xl text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:bg-slate-700 transition-all"><Library size={14}/> Bio-Data</button>
                         <button onClick={handleOpenSimulation} className="flex items-center justify-center gap-2 p-3 bg-purple-500/10 border border-purple-500/30 rounded-xl text-[10px] font-bold text-purple-400 uppercase tracking-widest hover:bg-purple-500/20 transition-all"><Beaker size={14}/> Simular</button>
                         <button onClick={() => handleGenerateAssessment('PROVA')} className="flex items-center justify-center gap-2 p-3 bg-telloo-neonBlue/10 border border-telloo-neonBlue/30 rounded-xl text-[10px] font-bold text-telloo-neonBlue uppercase tracking-widest hover:bg-telloo-neonBlue/20 transition-all"><FileText size={14}/> Prova</button>
@@ -1618,7 +1623,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
         className={`fixed inset-y-0 right-0 ${isDrawerFullscreen ? 'w-full' : 'w-full sm:w-[500px]'} bg-slate-900 z-50 border-l border-telloo-neonGreen/30 shadow-2xl transition-all duration-300 print:hidden`}
       >
         <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
-            <h2 className="font-display font-bold text-[19px] flex items-center gap-2 text-telloo-neonGreen uppercase tracking-tighter">
+            <h2 className="font-display font-bold text-[19px] flex items-center gap-2 text-telloo-neonGreen neon-green uppercase tracking-tighter">
                 {isSimulationMode ? <><Beaker size={20}/> Bio-Sandbox</> : <><Library size={20}/> Bio-Data</>}
             </h2>
             <div className="flex items-center gap-2">
@@ -1676,7 +1681,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                     <div className="bg-black/60 p-4 rounded-3xl border-4 border-slate-700 relative overflow-hidden group shadow-2xl">
                         <div className="w-full aspect-square bg-slate-900 rounded-2xl flex items-center justify-center relative shadow-inner overflow-hidden border border-white/5">
                             <svg viewBox="0 0 100 100" className="w-4/5 h-4/5 transition-all duration-500 transform">
-                                <circle cx="50" cy="50" r={25 + (simVariable * 0.15)} fill="none" stroke="#00ff9d" strokeWidth="1" strokeDasharray="4,4" className="animate-spin-slow opacity-30"/>
+                                <circle cx="50" cy="50" r={25 + (simVariable * 0.15)} fill="none" stroke="#10b981" strokeWidth="1" strokeDasharray="4,4" className="animate-spin-slow opacity-30"/>
                                 <circle cx="50" cy="50" r={15 + (simVariable * 0.1)} fill={currentMission.color ? currentMission.color(simVariable) : "#00f0ff"} opacity="0.6" className="transition-colors duration-500"/>
                                 <text x="50" y="52" textAnchor="middle" fill="white" fontSize="4" fontWeight="bold" className="uppercase tracking-widest">{simVariable}%</text>
                             </svg>
@@ -1746,7 +1751,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                 </button>
                 <button 
                   onClick={startAssessmentGeneration}
-                  className="flex-1 p-4 bg-telloo-neonGreen text-black rounded-xl text-[13px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all"
+                  className="flex-1 p-4 bg-telloo-neonGreen/90 backdrop-blur-sm text-black rounded-xl text-[13px] font-bold uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-[0_0_20px_rgba(0,255,157,0.4)]"
                 >
                   Confirmar
                 </button>
@@ -1808,7 +1813,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                 <div className="flex-1 flex flex-col min-w-0">
                     <div className="flex justify-between items-center gap-4">
                         <div className="flex items-center gap-1.5 sm:gap-2">
-                            <h1 className="font-display font-bold text-telloo-neonGreen tracking-tighter leading-none text-[18px] sm:text-[24px]">TELLOO</h1>
+                            <h1 className="font-display font-bold text-telloo-neonGreen neon-green tracking-tighter leading-none text-[18px] sm:text-[24px]">TELLOO</h1>
                             <span className="text-[7px] sm:text-[8px] bg-white/5 px-1.5 sm:px-2 py-0.5 rounded-full text-gray-500 font-bold uppercase tracking-widest border border-white/5 whitespace-nowrap">
                                 ENEM/SAEB
                             </span>
@@ -1842,7 +1847,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                                     </div>
                                 </div>
 
-                                <div className="w-20 h-1.5 bg-black/40 rounded-full overflow-hidden relative group/bar">
+                                <div className="w-20 h-1.5 bg-black/40 rounded-full overflow-hidden relative group/bar shadow-[0_0_10px_rgba(0,255,157,0.1)]">
                                     <motion.div 
                                         initial={{ width: 0 }}
                                         animate={{ width: `${progress}%` }}
@@ -1928,7 +1933,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
             </div>
             <div className="flex items-center gap-2 relative">
                 {isLoading && (
-                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-telloo-neonGreen px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-telloo-neonGreen/20 shadow-2xl flex items-center gap-2 whitespace-nowrap animate-fade-in">
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900/95 backdrop-blur-md text-telloo-neonGreen neon-green px-4 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border border-telloo-neonGreen/20 shadow-2xl flex items-center gap-2 whitespace-nowrap animate-fade-in">
                     <Loader2 size={10} className="animate-spin" />
                     <span className="animate-pulse">{thinkingPhrases[thinkingIndex]}</span>
                   </div>
@@ -1943,7 +1948,7 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
                        <Mic size={20} />
                      </button>
                 </div>
-                 <button onClick={() => handleSend()} disabled={!inputText.trim() || isLoading} className="p-3 bg-telloo-neonGreen text-black rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg shadow-telloo-neonGreen/20"><Send size={20}/></button>
+                 <button onClick={() => handleSend()} disabled={!inputText.trim() || isLoading} className="p-3 bg-telloo-neonGreen/90 backdrop-blur-sm text-black rounded-full hover:scale-105 active:scale-95 transition-all shadow-lg shadow-telloo-neonGreen/40 border border-telloo-neonGreen/20"><Send size={20}/></button>
             </div>
         </div>
       </footer>
@@ -1952,4 +1957,3 @@ const ChatInterface: React.FC<Props> = ({ userName, settings, onOpenSettings, on
 };
 
 export default ChatInterface;
-
