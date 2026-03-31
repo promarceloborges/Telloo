@@ -19,7 +19,7 @@ const Mascot: React.FC<Props> = ({ size = 'md', animated = false }) => {
       <motion.div
         animate={animated ? {
           scale: [1, 1.05, 1],
-          filter: ["drop-shadow(0 0 8px rgba(0, 255, 157, 0.4))", "drop-shadow(0 0 15px rgba(0, 255, 157, 0.6))", "drop-shadow(0 0 8px rgba(0, 255, 157, 0.4))"]
+          filter: ["drop-shadow(0 0 8px rgba(16, 185, 129, 0.4))", "drop-shadow(0 0 15px rgba(16, 185, 129, 0.6))", "drop-shadow(0 0 8px rgba(16, 185, 129, 0.4))"]
         } : {}}
         transition={{
           duration: 3,
@@ -31,7 +31,7 @@ const Mascot: React.FC<Props> = ({ size = 'md', animated = false }) => {
         <svg viewBox="0 0 100 100" className="w-full h-full">
           <defs>
             <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#00ff9d" />
+              <stop offset="0%" stopColor="#10b981" />
               <stop offset="100%" stopColor="#00f0ff" />
             </linearGradient>
             <filter id="glow">
@@ -94,7 +94,7 @@ const Mascot: React.FC<Props> = ({ size = 'md', animated = false }) => {
           <path 
             d="M32 30 L68 30" 
             fill="none" 
-            stroke="#00ff9d" 
+            stroke="#10b981" 
             strokeWidth="7" 
             strokeLinecap="round"
             filter="url(#glow)"
@@ -104,8 +104,8 @@ const Mascot: React.FC<Props> = ({ size = 'md', animated = false }) => {
           <line x1="50" y1="30" x2="50" y2="85" stroke="#00f0ff" strokeWidth="2" strokeDasharray="2 2" className="opacity-30" />
 
           {/* Nodos de Dados Genéticos */}
-          <circle cx="38" cy="30" r="3" fill="#00ff9d" filter="url(#glow)" />
-          <circle cx="62" cy="30" r="3" fill="#00ff9d" filter="url(#glow)" />
+          <circle cx="38" cy="30" r="3" fill="#10b981" filter="url(#glow)" />
+          <circle cx="62" cy="30" r="3" fill="#10b981" filter="url(#glow)" />
           <circle cx="50" cy="55" r="4" fill="#00f0ff" filter="url(#glow)" />
           
           {/* Lâmina de Microscopia (Base) */}
